@@ -1,4 +1,5 @@
-// Mock data functions that will later be replaced by Google Sheets / Calendar API calls
+import { google } from 'googleapis';
+import path from 'path';
 
 export type Meal = {
   id: string;
@@ -18,28 +19,121 @@ export type Event = {
   person: string;
 };
 
-export async function getWeeklyMeals(): Promise<Meal[]> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+// Singleton auth client
+const auth = new google.auth.GoogleAuth({
+  keyFile: path.join(process.cwd(), 'google-credentials.json'),
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets.readonly', 
+    'https://www.googleapis.com/auth/calendar.readonly'
+  ],
+});
+
+export async function getRawInventory(): Promise<any[]> {
+  const sheets = google.sheets({ version: 'v4', auth });
+  const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const firstSheetName = meta.data.sheets?.[0]?.properties?.title;
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${firstSheetName}!A1:Z100`,
+  });
+
+  const rows = res.data.values || [];
+  const dataRows = rows.slice(2);
+  const dinners = dataRows.filter(row => row[0]?.toLowerCase() === 'dinner');
   
-  return [
-    { id: "1", date: "2026-06-01", name: "Grilled Lemon Chicken", prepTime: "15m", cookTime: "25m", type: "Dinner" },
-    { id: "2", date: "2026-06-02", name: "Taco Tuesday", prepTime: "20m", cookTime: "15m", type: "Dinner" },
-    { id: "3", date: "2026-06-03", name: "Spaghetti & Meatballs", prepTime: "10m", cookTime: "30m", type: "Dinner" },
-    { id: "4", date: "2026-06-04", name: "Leftovers", prepTime: "5m", cookTime: "5m", type: "Dinner" },
-    { id: "5", date: "2026-06-05", name: "Homemade Pizza", prepTime: "30m", cookTime: "15m", type: "Dinner" },
-    { id: "6", date: "2026-06-06", name: "Burgers", prepTime: "15m", cookTime: "15m", type: "Dinner" },
-    { id: "7", date: "2026-06-07", name: "Roast Beef", prepTime: "20m", cookTime: "120m", type: "Dinner" },
-  ];
+  return dinners.map((row, idx) => ({
+    id: String(idx),
+    name: row[1] || "Eat Out",
+    type: "Dinner",
+    prepTime: row[4] || "N/A",
+    ingredients: row[5] || ""
+  }));
+}
+
+export async function getWeeklyMeals(): Promise<Meal[]> {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+    
+    // Attempt to read from the generated "Scheduled Meals" tab
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'Scheduled Meals'!A2:E15`, // Skip header
+    });
+
+    const rows = res.data.values || [];
+    
+    const meals = rows.map((row, idx) => ({
+      id: String(idx),
+      date: row[0] || "Unknown Date",
+      name: row[1] || "No meal scheduled",
+      type: row[2] || "Dinner",
+      prepTime: row[3] || "N/A",
+      cookTime: "See Sheet", 
+      ingredients: row[4] || ""
+    }));
+
+    return meals;
+  } catch (error: any) {
+    console.log("No schedule found or error:", error.message);
+    // Return empty if schedule hasn't been generated yet
+    return [];
+  }
 }
 
 export async function getTodaySchedule(): Promise<Event[]> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  
-  return [
-    { id: "1", time: "8:00 AM", title: "School Drop-off", color: "#10b981", person: "Kids" },
-    { id: "2", time: "4:00 PM", title: "Soccer Practice", location: "Field 3", color: "#10b981", person: "Son (9)" },
-    { id: "3", time: "5:30 PM", title: "Gymnastics", location: "Main Gym", color: "#8b5cf6", person: "Son (6)" },
-    { id: "4", time: "7:00 PM", title: "Parents Dinner Out", color: "#f59e0b", person: "Parents" },
-  ];
+  try {
+    const calendar = google.calendar({ version: 'v3', auth });
+    
+    const timeMin = new Date();
+    timeMin.setHours(0,0,0,0);
+    const timeMax = new Date();
+    timeMax.setHours(23,59,59,999);
+
+    const res = await calendar.events.list({
+      calendarId: 'aasay412@gmail.com',
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime'
+    });
+
+    const items = res.data.items || [];
+    const filteredEvents: Event[] = [];
+
+    items.forEach(event => {
+      const isAllDay = !!event.start?.date;
+      let include = false;
+      let timeStr = "All Day";
+
+      if (isAllDay) {
+        include = true;
+      } else if (event.start?.dateTime) {
+        const startDate = new Date(event.start.dateTime);
+        const hours = startDate.getHours();
+        if (hours >= 16) {
+          include = true;
+          timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        }
+      }
+
+      if (include) {
+        filteredEvents.push({
+          id: event.id || String(Math.random()),
+          time: timeStr,
+          title: event.summary || "Busy",
+          location: event.location || undefined,
+          color: isAllDay ? "#f59e0b" : "#10b981",
+          person: "Family",
+        });
+      }
+    });
+
+    return filteredEvents;
+  } catch (error) {
+    console.error("Failed to fetch calendar:", error);
+    return [];
+  }
 }

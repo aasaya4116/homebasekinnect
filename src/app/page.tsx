@@ -1,9 +1,22 @@
 import "./page.module.css";
 import { getWeeklyMeals, getTodaySchedule } from "@/lib/data";
+import { generateSchedule } from "@/lib/scheduler";
+import { revalidatePath } from "next/cache";
+import { Calendar as CalendarIcon, Clock, Flame, Utensils, Zap } from "lucide-react";
+
+const foodImages = [
+  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600&h=300",
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=600&h=300",
+  "https://images.unsplash.com/photo-1490818387583-1b5ba4197aab?auto=format&fit=crop&q=80&w=600&h=300",
+  "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=80&w=600&h=300",
+  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=600&h=300",
+  "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&q=80&w=600&h=300",
+  "https://images.unsplash.com/photo-1484723091791-0063154a858d?auto=format&fit=crop&q=80&w=600&h=300"
+];
 
 export default async function Home() {
   const weeklyMeals = await getWeeklyMeals();
-  const todaySchedule = await getTodaySchedule();
+  const schedule = await getTodaySchedule();
   
   const days = [
     { name: "Mon", date: "1", meal: weeklyMeals[0] },
@@ -15,105 +28,120 @@ export default async function Home() {
     { name: "Sun", date: "7", meal: weeklyMeals[6] }
   ];
 
-  const todaysMeal = weeklyMeals[0];
+  const todaysMeal = weeklyMeals.length > 0 ? weeklyMeals[0] : null;
+
+  async function handleGenerate() {
+    "use server";
+    await generateSchedule(7);
+    revalidatePath("/");
+  }
   
   return (
-    <div style={{ padding: '0 2rem 2rem' }}>
+    <div style={{ padding: '0 2rem 2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       
-      {/* Bento Box Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '3fr 1fr', 
-        gridTemplateRows: '1fr 1fr',
-        gap: '1.5rem', 
-        height: 'calc(100vh - 100px)' 
-      }}>
+      {/* HEADER */}
+      <header className="flex-between">
+        <div>
+          <h1 style={{ fontSize: '2.5rem', margin: 0, fontWeight: 700, letterSpacing: '-0.02em' }}>Asaya Dashboard</h1>
+          <p style={{ color: 'var(--accent-purple)', fontSize: '1.1rem', marginTop: '0.25rem', fontWeight: 500 }}>
+            <Zap size={16} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '4px' }}/>
+            Smart Family Planner
+          </p>
+        </div>
+        <form action={handleGenerate}>
+          <button type="submit" className="btn-primary" style={{ backgroundColor: 'var(--accent-purple)' }}>
+            <CalendarIcon size={18} style={{ marginRight: '8px' }}/>
+            Auto-Schedule Week
+          </button>
+        </form>
+      </header>
+      
+      {/* TOP ROW: Tonight's Focus (2 Columns) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
         
-        {/* Featured Weekly Calendar (Spans 2 rows on the left) */}
-        <main className="glass-panel" style={{ gridRow: 'span 2', padding: '2rem', display: 'flex', flexDirection: 'column' }}>
-          <header className="flex-between" style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
-              <h2>This Week</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>June 1 - June 7</p>
-            </div>
-            <button className="btn-primary">Sync Calendar</button>
-          </header>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1rem', flexGrow: 1 }}>
-            {days.map((day, idx) => (
-              <div key={day.name} className="glass-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', opacity: idx < 1 ? 0.6 : 1 }}>
-                <h3 style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem', marginBottom: '1rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>{day.name}</span>
-                  <span style={{ fontSize: '1.5rem' }}>{day.date}</span>
-                </h3>
-                
-                {/* Meal in Calendar */}
-                <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                  <p style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--accent-hover)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>{day.meal?.type}</p>
-                  <p style={{ fontSize: '0.9rem' }}>{day.meal?.name}</p>
+        {/* Left: Tonight's Meal */}
+        <div className="glass-card" style={{ padding: 0, minHeight: '250px' }}>
+          {todaysMeal && todaysMeal.name !== 'No meal scheduled' ? (
+            <>
+              <img src={foodImages[0]} alt="Food" className="glass-card-image" style={{ height: '100%', maskImage: 'linear-gradient(to right, black 40%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 40%, transparent 100%)' }} />
+              <div className="glass-card-content" style={{ padding: '2rem', justifyContent: 'center', width: '60%' }}>
+                <span style={{ backgroundColor: 'var(--accent-orange)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold', alignSelf: 'flex-start', marginBottom: '1rem' }}>TONIGHT'S DINNER</span>
+                <h2 style={{ fontSize: '2.2rem', margin: '0 0 1rem 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{todaysMeal.name}</h2>
+                <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-secondary)', fontSize: '1rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Clock size={16}/> {todaysMeal.prepTime}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Flame size={16}/> {todaysMeal.type}</span>
                 </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <Utensils size={48} style={{ color: 'var(--text-tertiary)', marginBottom: '1rem' }}/>
+              <h3 style={{ color: 'var(--text-secondary)' }}>No Meal Scheduled</h3>
+            </div>
+          )}
+        </div>
 
-                {/* Activity Indicators */}
-                <div style={{ marginTop: 'auto' }}>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '0.5rem' }}>
-                    {idx === 0 ? `${todaySchedule.length} Events` : idx % 2 === 0 ? '1 Event' : 'Free'}
-                  </p>
-                  <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                    {idx === 0 ? (
-                      todaySchedule.slice(0, 3).map(event => (
-                        <div key={event.id} style={{ width: '8px', height: '8px', borderRadius: '50%', background: event.color }}></div>
-                      ))
-                    ) : (
-                      idx % 2 === 0 && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
-                    )}
+        {/* Right: Evening Schedule */}
+        <div className="glass-card" style={{ padding: '2rem' }}>
+          <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem' }}>
+            <CalendarIcon size={18} color="var(--accent-blue)"/> Tonight's Schedule
+          </h3>
+          
+          {schedule.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+              {schedule.map((event, i) => (
+                <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px' }}>
+                  <div style={{ width: '4px', height: '30px', backgroundColor: event.color, borderRadius: '4px', boxShadow: `0 0 8px ${event.color}40` }} />
+                  <div>
+                    <p style={{ fontWeight: '600', margin: '0 0 0.25rem 0', color: 'var(--text-primary)', fontSize: '0.95rem' }}>{event.title}</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', margin: 0 }}>
+                      <Clock size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }}/>
+                      {event.time}
+                    </p>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </main>
-
-        {/* Small Widget 1: Today's Overview (Top Right) */}
-        <aside className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          <div style={{ marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>Today</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Monday, June 1</p>
-          </div>
-          
-          <div className="glass-card" style={{ marginBottom: '1rem', padding: '1rem' }}>
-            <h3 style={{ fontSize: '1rem', color: 'var(--accent-hover)' }}>Menu</h3>
-            <p style={{ fontWeight: 'bold', marginTop: '0.5rem', fontSize: '0.95rem' }}>{todaysMeal.name}</p>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Prep: {todaysMeal.prepTime} | Cook: {todaysMeal.cookTime}</p>
-          </div>
-
-          <div className="glass-card" style={{ padding: '1rem' }}>
-            <h3 style={{ fontSize: '1rem', color: 'var(--accent-hover)', marginBottom: '0.75rem' }}>Schedule</h3>
-            {todaySchedule.map(event => (
-              <div key={event.id} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: event.color, marginTop: '5px' }}></div>
-                <div>
-                  <p style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{event.time}</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{event.title}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
-
-        {/* Small Widget 2: Next Prep / Groceries (Bottom Right) */}
-        <aside className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-           <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>Quick Actions</h2>
-           <div className="glass-card" style={{ marginBottom: '1rem', padding: '1rem', cursor: 'pointer' }}>
-             <h3 style={{ fontSize: '1rem', color: 'var(--success-color)' }}>Groceries</h3>
-             <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>5 items remaining</p>
-           </div>
-           <div className="glass-card" style={{ padding: '1rem', cursor: 'pointer' }}>
-             <h3 style={{ fontSize: '1rem', color: 'var(--warning-color)' }}>Sunday Prep</h3>
-             <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>Chop veggies for Taco Tuesday</p>
-           </div>
-        </aside>
+              ))}
+            </div>
+          ) : (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>
+              No evening events.
+            </div>
+          )}
+        </div>
 
       </div>
+
+      {/* BOTTOM ROW: 7-Column Weekly Calendar */}
+      <div>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>The Week Ahead</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1rem' }}>
+          {days.map((day, idx) => (
+            <div key={day.name} className="glass-card" style={{ padding: 0, opacity: idx === 0 ? 0.6 : 1 }}>
+              <img src={foodImages[idx]} alt="Food" className="glass-card-image" style={{ height: '120px' }} />
+              <div className="glass-card-content" style={{ paddingTop: '100px', paddingLeft: '1rem', paddingRight: '1rem', paddingBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>{day.name}</h3>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 'bold' }}>{day.date}</span>
+                </div>
+                
+                {day.meal && day.meal.name !== 'No meal scheduled' ? (
+                  <>
+                    <p style={{ fontWeight: '600', fontSize: '1rem', margin: '0.5rem 0', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                      {day.meal.name}
+                    </p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, display: 'flex', alignItems: 'center', gap: '4px', marginTop: 'auto' }}>
+                      <Clock size={12}/> {day.meal.prepTime}
+                    </p>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', margin: '0.5rem 0' }}>No meal scheduled</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }

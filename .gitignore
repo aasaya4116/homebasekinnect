@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+google-credentials.json
 
 # debug
 npm-debug.log*
