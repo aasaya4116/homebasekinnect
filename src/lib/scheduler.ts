@@ -1,4 +1,5 @@
-import { getWeeklyMeals, getTodaySchedule, getRawInventory } from './data';
+import { getWeeklyMeals, getTodaySchedule, getRawInventory, getPantryStaples } from './data';
+import { buildGroceryList } from './groceryEngine';
 import { google } from 'googleapis';
 import path from 'path';
 
@@ -223,19 +224,35 @@ async function writeGroceryListToSheet(schedule: any[]) {
   const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
   const tabName = 'Auto Grocery List';
 
-  // 1. Parse and aggregate ingredients
-  const allIngredients = new Set<string>();
-  schedule.forEach(day => {
-    if (day.ingredients && day.ingredients !== "Leftovers") {
-      // Split by comma and clean up
-      const items = day.ingredients.split(',').map((i: string) => i.trim()).filter(Boolean);
-      items.forEach((item: string) => allIngredients.add(item));
-    }
-  });
+  // 1. Fetch pantry staples from Google Sheets (Rule 8)
+  const pantryStaples = await getPantryStaples();
 
-  const uniqueIngredients = Array.from(allIngredients).sort();
+  // 2. Fetch previous week's schedule for auto-replenishment (Rule 9)
+  let previousSchedule: any[] = [];
+  try {
+    const prevRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'Scheduled Meals'!A2:E15`,
+    });
+    const prevRows = prevRes.data.values || [];
+    previousSchedule = prevRows.map(row => ({
+      date: row[0] || "",
+      mealName: row[1] || "",
+      type: row[2] || "",
+      prepTime: row[3] || "",
+      ingredients: row[4] || "",
+    }));
+  } catch {
+    // No previous schedule exists, that's fine
+  }
 
-  // 2. Check if tab exists, if not create it
+  // 3. Run the Grocery Engine (Rules 7-10)
+  const groceryList = buildGroceryList(schedule, pantryStaples, previousSchedule);
+
+  console.log(`Grocery Engine: ${groceryList.totalItems} items across ${groceryList.categories.length} aisles`);
+  console.log(`Filtered ${groceryList.filteredStaples.length} pantry staples: ${groceryList.filteredStaples.join(', ')}`);
+
+  // 4. Check if tab exists, if not create it
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
   const sheetExists = meta.data.sheets?.find(s => s.properties?.title === tabName);
 
@@ -250,16 +267,22 @@ async function writeGroceryListToSheet(schedule: any[]) {
     });
   }
 
-  // 3. Format Data
+  // 5. Format Data with enhanced columns
   const values = [
-    ['Ingredient', 'Status', 'Needed For'], // Header
-    ...uniqueIngredients.map(ing => [ing, 'To Buy', 'This Week'])
+    ['Category', 'Ingredient', 'Qty', 'Status', 'Meal Source'], // Header
+    ...groceryList.items.map(item => [
+      item.category,
+      item.ingredient,
+      item.quantity,
+      item.status,
+      item.mealSources.join(', '),
+    ])
   ];
 
-  // 4. Clear existing list and rewrite
+  // 6. Clear existing list and rewrite
   await sheets.spreadsheets.values.clear({
     spreadsheetId,
-    range: `'${tabName}'!A1:C500`
+    range: `'${tabName}'!A1:E500`
   });
 
   await sheets.spreadsheets.values.update({
@@ -269,3 +292,4 @@ async function writeGroceryListToSheet(schedule: any[]) {
     requestBody: { values }
   });
 }
+

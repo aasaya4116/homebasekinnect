@@ -137,3 +137,52 @@ export async function getTodaySchedule(): Promise<Event[]> {
     return [];
   }
 }
+
+export async function getPantryStaples(): Promise<Set<string>> {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+    
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'Pantry Staples'!A2:A100`, // Skip header
+    });
+
+    const rows = res.data.values || [];
+    const staples = new Set<string>();
+    rows.forEach(row => {
+      if (row[0]) staples.add(row[0].toLowerCase().trim());
+    });
+    
+    return staples;
+  } catch (error: any) {
+    console.log("No Pantry Staples tab found, using defaults:", error.message);
+    return new Set<string>();
+  }
+}
+
+export async function getGroceryList(): Promise<any[]> {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+    
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `'Auto Grocery List'!A2:E500`, // Skip header
+    });
+
+    const rows = res.data.values || [];
+    
+    return rows.map((row, idx) => ({
+      id: String(idx),
+      category: row[0] || "Other",
+      ingredient: row[1] || "",
+      quantity: row[2] || "",
+      status: row[3] || "To Buy",
+      mealSource: row[4] || "",
+    }));
+  } catch (error: any) {
+    console.log("No Grocery List tab found:", error.message);
+    return [];
+  }
+}

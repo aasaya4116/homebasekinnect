@@ -22,10 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable}`}>
       <body>
-        <div className="container" style={{ paddingBottom: '0' }}>
+        <div className="container">
           <Navigation />
+          {children}
         </div>
-        {children}
       </body>
     </html>
   );

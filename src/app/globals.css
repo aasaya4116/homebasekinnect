@@ -1,27 +1,30 @@
 :root {
-  /* Minimalist CarPlay Light Backgrounds */
-  --bg-color: #f8fafc;
-  --bg-panel: #ffffff;
-  --bg-panel-hover: #f1f5f9;
+  /* AMOLED Dark Mode - 24-inch Vertical Wall Dashboard */
+  --bg-color: #000000;
+  --bg-panel: #111111;
+  --bg-panel-hover: #1a1a1a;
   
   /* Text */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
+  --text-primary: #f0f0f0;
+  --text-secondary: #8a8a8a;
+  --text-tertiary: #555555;
 
   /* Accents */
-  --accent-purple: #0ea5e9; /* Light blue accent */
-  --accent-purple-glow: rgba(14, 165, 233, 0.1);
-  --accent-orange: #f59e0b;
-  --accent-green: #10b981;
   --accent-blue: #0ea5e9;
-  --danger-color: #ef4444;
+  --accent-blue-glow: rgba(14, 165, 233, 0.15);
+  --accent-orange: #f59e0b;
+  --accent-orange-glow: rgba(245, 158, 11, 0.15);
+  --accent-green: #10b981;
+  --accent-green-glow: rgba(16, 185, 129, 0.15);
+  --accent-red: #ef4444;
 
   /* Borders & Shadows */
-  --border-color: #e2e8f0;
-  --border-glow: #cbd5e1;
-  --shadow-bento: 0 4px 12px rgba(0, 0, 0, 0.05);
-  --radius-md: 16px;
+  --border-color: #222222;
+  --border-subtle: #1a1a1a;
+  --shadow-widget: 0 2px 20px rgba(0, 0, 0, 0.4);
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
 }
 
 html,
@@ -38,8 +41,6 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 * {
@@ -53,137 +54,338 @@ a {
 
 /* Typography */
 h1, h2, h3, h4 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
   font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-h1 {
-  font-size: 2.5rem;
-}
-
-h2 {
-  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 p {
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.5rem 0;
   color: var(--text-secondary);
   line-height: 1.5;
 }
 
-/* Glassmorphism utilities - Overridden for Flat CarPlay look */
-.glass-panel {
+/* ========================================
+   WIDGET SYSTEM - Modular Dark Cards
+   ======================================== */
+
+.widget {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-bento);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-widget);
+  transition: border-color 0.3s ease;
 }
 
-.glass-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-bento);
+.widget:hover {
+  border-color: #333333;
 }
 
-.glass-card:hover {
-  transform: translateY(-2px);
-  background: var(--bg-panel-hover);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-}
-
-.glass-card-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  opacity: 1;
-}
-
-.glass-card-content {
-  position: relative;
-  z-index: 10;
-  height: 100%;
+.widget-header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-.glass-card-image-padding {
-  padding-top: 140px;
+.widget-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.widget-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ========================================
+   CLOCK WIDGET
+   ======================================== */
+
+.clock-time {
+  font-size: 5rem;
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.clock-date {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* ========================================
+   MEAL ROW (Week Ahead List)
+   ======================================== */
+
+.meal-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.2s ease;
+}
+
+.meal-row:last-child {
+  border-bottom: none;
+}
+
+.meal-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+}
+
+.meal-row-day {
+  width: 42px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.meal-row-day-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.meal-row-day-num {
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.meal-row-divider {
+  width: 3px;
+  height: 36px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.meal-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.meal-row-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meal-row-meta {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.meal-row-image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   SCHEDULE EVENT ROW
+   ======================================== */
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.event-row:last-child {
+  border-bottom: none;
+}
+
+.event-dot {
+  width: 4px;
+  height: 32px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.event-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.event-time {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ========================================
+   TONIGHT'S DINNER HERO
+   ======================================== */
+
+.dinner-hero {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.dinner-hero-image {
+  width: 100px;
+  height: 100px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.dinner-hero-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.dinner-hero-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.dinner-meta-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   NAVIGATION - Minimal for wall display
+   ======================================== */
+
+.wall-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.wall-nav-brand {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.wall-nav-links {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.wall-nav-link {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wall-nav-link:hover {
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+}
+
+.wall-nav-link.active {
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+
+/* ========================================
+   BUTTON
+   ======================================== */
 
 .btn-primary {
-  background: var(--accent-color);
+  background: var(--accent-blue);
   color: #fff;
   border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  letter-spacing: 0.02em;
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
+  background: #0284c7;
+  transform: translateY(-1px);
 }
 
-/* Layout Utilities */
+/* ========================================
+   LAYOUT UTILITIES
+   ======================================== */
+
 .container {
-  padding: 2rem;
-  max-width: 1200px;
+  padding: 1.25rem 1.5rem;
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
 }
 
-.flex-between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.grid-2 {
+.dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-/* Navigation */
-.nav-link {
-  padding: 10px 20px;
-  border-radius: 12px;
-  color: var(--text-secondary);
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
+/* ========================================
+   CHECKLIST (Groceries / Chores)
+   ======================================== */
 
-.nav-link:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-}
-
-.nav-link.active {
-  background: var(--accent-color);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-/* Forms & Checklists */
 .checklist-item {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid var(--glass-border);
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-subtle);
   transition: background 0.2s;
 }
 
@@ -191,23 +393,35 @@ p {
   border-bottom: none;
 }
 
-.checklist-item:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
 .checkbox {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 6px;
-  border: 2px solid var(--text-secondary);
+  border: 2px solid var(--text-tertiary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .checkbox.checked {
-  background: var(--success-color);
-  border-color: var(--success-color);
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  gap: 0.5rem;
 }

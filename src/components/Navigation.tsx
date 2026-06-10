@@ -14,19 +14,19 @@ export default function Navigation() {
   ];
 
   return (
-    <nav className="glass-panel" style={{ padding: '0.75rem 1rem', display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
-      <div style={{ marginRight: 'auto', fontWeight: 'bold', fontSize: '1.25rem', letterSpacing: '1px' }}>
-        Kinnect HomeBase
+    <nav className="wall-nav">
+      <div className="wall-nav-brand">Kinnect HomeBase</div>
+      <div className="wall-nav-links">
+        {navItems.map((item) => (
+          <Link
+            key={item.name}
+            href={item.path}
+            className={`wall-nav-link ${pathname === item.path ? 'active' : ''}`}
+          >
+            {item.name}
+          </Link>
+        ))}
       </div>
-      {navItems.map((item) => (
-        <Link
-          key={item.name}
-          href={item.path}
-          className={`nav-link ${pathname === item.path ? 'active' : ''}`}
-        >
-          {item.name}
-        </Link>
-      ))}
     </nav>
   );
 }
