@@ -24,11 +24,11 @@ export default function Clock() {
 
   return (
     <div>
-      <div className="clock-time">
+      <div className="clock-time" style={{ fontSize: '3rem' }}>
         {displayHour}:{minutes}
-        <span style={{ fontSize: '1.5rem', fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: '8px' }}>{ampm}</span>
+        <span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: '6px' }}>{ampm}</span>
       </div>
-      <div className="clock-date">{dateStr}</div>
+      <div className="clock-date" style={{ fontSize: '0.9rem' }}>{dateStr}</div>
     </div>
   );
 }
