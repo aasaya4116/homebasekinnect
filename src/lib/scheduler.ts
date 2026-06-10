@@ -50,55 +50,117 @@ export async function generateSchedule(daysOut: number = 7) {
 
     let quickIdx = 0;
     let longIdx = 0;
+    let hasEatenOutThisWeek = false;
+    let lastProtein = "";
+
+    const proteinKeywords = ["chicken", "beef", "pork", "fish", "shrimp", "turkey", "tofu"];
 
     for (let i = 0; i < daysOut; i++) {
       const targetDate = new Date();
       targetDate.setDate(targetDate.getDate() + i);
       const dateStr = targetDate.toISOString().split('T')[0];
+      const dayOfWeek = targetDate.getDay(); // 0 is Sun, 1 is Mon, etc.
 
-      // Count events for this specific day (after 4pm)
+      // RULE 2: Leftover Efficiency
+      // If yesterday's meal was a "Long" prep meal (like a crockpot or roast), today is Leftovers.
+      const yesterday = schedule[i - 1];
+      if (yesterday && yesterday.prepTime && yesterday.prepTime.toLowerCase().includes('long')) {
+        schedule.push({
+          date: dateStr,
+          mealName: "Leftovers from " + yesterday.mealName,
+          type: "Dinner",
+          prepTime: "0 min (Microwave)",
+          ingredients: "Leftovers"
+        });
+        continue; // Skip the rest of the logic for today
+      }
+
+      // Count events and evaluate Prime Time Conflicts
       let busynessScore = 0;
+      let hasPrimeTimeConflict = false;
+
       events.forEach(event => {
         const isAllDay = !!event.start?.date;
         const eventDateStr = isAllDay ? event.start?.date : event.start?.dateTime?.split('T')[0];
         
         if (eventDateStr === dateStr) {
           if (isAllDay) {
-            busynessScore += 2; // All day events or travel make the day busy
+            busynessScore += 2; 
           } else if (event.start?.dateTime) {
-            const hours = new Date(event.start.dateTime).getHours();
+            const startDate = new Date(event.start.dateTime);
+            const hours = startDate.getHours();
+            const minutes = startDate.getMinutes();
+            const timeVal = hours + (minutes / 60);
+
             if (hours >= 16) busynessScore += 1; // Evening events make it busy
+
+            // RULE 3: Prime Time Conflict
+            // If event is between 4:00 PM (16.0) and 6:30 PM (18.5)
+            if (timeVal >= 16.0 && timeVal <= 18.5) {
+              hasPrimeTimeConflict = true;
+            }
           }
         }
       });
 
-      // 4. Assign meal based on busyness
-      let selectedMeal;
-      
-      // If score is 2 or more, or if it's a weekday, prefer quick meals if we have lots of events
-      if (busynessScore >= 1) {
-        // High busyness -> Pick Quick meal
-        if (quickMeals.length > 0) {
-          selectedMeal = quickMeals[quickIdx % quickMeals.length];
-          quickIdx++;
-        } else if (longMeals.length > 0) {
-          selectedMeal = longMeals[longIdx % longMeals.length];
-          longIdx++;
+      // RULE 1: Take a Break
+      // Ensure at least 1 Eat Out night M-F. If it's Friday (5) and we haven't eaten out yet, force it.
+      // Or if the day is insanely busy (Score >= 3), force an Eat Out.
+      if ((dayOfWeek === 5 && !hasEatenOutThisWeek) || busynessScore >= 3) {
+        schedule.push({
+          date: dateStr,
+          mealName: "Take a Break / Eat Out",
+          type: "Dinner",
+          prepTime: "0 min",
+          ingredients: ""
+        });
+        hasEatenOutThisWeek = true;
+        continue;
+      }
+
+      // 4. Assign meal based on busyness and rules
+      let selectedMeal = null;
+      let attempts = 0;
+
+      // Decide which bucket to pick from
+      const preferQuick = busynessScore >= 1 || hasPrimeTimeConflict;
+      const primaryBucket = preferQuick ? quickMeals : longMeals;
+      const backupBucket = preferQuick ? longMeals : quickMeals;
+
+      // Helper to pick a meal with RULE 4: Protein Variety
+      const pickMealWithVariety = (bucket: any[], startIdx: number) => {
+        if (bucket.length === 0) return null;
+        for (let j = 0; j < bucket.length; j++) {
+          const meal = bucket[(startIdx + j) % bucket.length];
+          const ingredientsStr = meal.ingredients?.toLowerCase() || "";
+          const mealProtein = proteinKeywords.find(p => ingredientsStr.includes(p)) || "unknown";
+          
+          if (mealProtein !== lastProtein || mealProtein === "unknown") {
+            return meal; // Found a meal with a different protein!
+          }
         }
+        return bucket[startIdx % bucket.length]; // Fallback if all meals have the same protein
+      };
+
+      if (primaryBucket.length > 0) {
+        selectedMeal = pickMealWithVariety(primaryBucket, preferQuick ? quickIdx : longIdx);
+        if (preferQuick) quickIdx++; else longIdx++;
+      } else if (backupBucket.length > 0) {
+        selectedMeal = pickMealWithVariety(backupBucket, preferQuick ? longIdx : quickIdx);
+        if (preferQuick) longIdx++; else quickIdx++;
+      }
+
+      // Track protein for tomorrow
+      if (selectedMeal) {
+        const ingredientsStr = selectedMeal.ingredients?.toLowerCase() || "";
+        lastProtein = proteinKeywords.find(p => ingredientsStr.includes(p)) || "unknown";
       } else {
-        // Low busyness -> Pick Long prep meal
-        if (longMeals.length > 0) {
-          selectedMeal = longMeals[longIdx % longMeals.length];
-          longIdx++;
-        } else if (quickMeals.length > 0) {
-          selectedMeal = quickMeals[quickIdx % quickMeals.length];
-          quickIdx++;
-        }
+        lastProtein = "unknown";
       }
 
       schedule.push({
         date: dateStr,
-        mealName: selectedMeal?.name || "Free Night / Leftovers",
+        mealName: selectedMeal?.name || "Free Night / Scrounge",
         type: selectedMeal?.type || "Dinner",
         prepTime: selectedMeal?.prepTime || "N/A",
         ingredients: selectedMeal?.ingredients || ""
@@ -107,6 +169,7 @@ export async function generateSchedule(daysOut: number = 7) {
 
     // 5. Write back to Google Sheets
     await writeScheduleToSheet(schedule);
+    await writeGroceryListToSheet(schedule);
 
     return schedule;
   } catch (error) {
@@ -145,6 +208,58 @@ async function writeScheduleToSheet(schedule: any[]) {
   await sheets.spreadsheets.values.clear({
     spreadsheetId,
     range: `'${tabName}'!A1:E100`
+  });
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `'${tabName}'!A1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values }
+  });
+}
+
+async function writeGroceryListToSheet(schedule: any[]) {
+  const sheets = google.sheets({ version: 'v4', auth });
+  const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+  const tabName = 'Auto Grocery List';
+
+  // 1. Parse and aggregate ingredients
+  const allIngredients = new Set<string>();
+  schedule.forEach(day => {
+    if (day.ingredients && day.ingredients !== "Leftovers") {
+      // Split by comma and clean up
+      const items = day.ingredients.split(',').map((i: string) => i.trim()).filter(Boolean);
+      items.forEach((item: string) => allIngredients.add(item));
+    }
+  });
+
+  const uniqueIngredients = Array.from(allIngredients).sort();
+
+  // 2. Check if tab exists, if not create it
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheetExists = meta.data.sheets?.find(s => s.properties?.title === tabName);
+
+  if (!sheetExists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [{
+          addSheet: { properties: { title: tabName } }
+        }]
+      }
+    });
+  }
+
+  // 3. Format Data
+  const values = [
+    ['Ingredient', 'Status', 'Needed For'], // Header
+    ...uniqueIngredients.map(ing => [ing, 'To Buy', 'This Week'])
+  ];
+
+  // 4. Clear existing list and rewrite
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `'${tabName}'!A1:C500`
   });
 
   await sheets.spreadsheets.values.update({

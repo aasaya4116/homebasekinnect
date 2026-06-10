@@ -1,25 +1,27 @@
 :root {
-  /* Deep Dark Backgrounds */
-  --bg-color: #0b0c10;
-  --bg-panel: #14161f;
-  --bg-panel-hover: #1c1f2b;
+  /* Minimalist CarPlay Light Backgrounds */
+  --bg-color: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-panel-hover: #f1f5f9;
   
   /* Text */
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
   --text-tertiary: #64748b;
 
   /* Accents */
-  --accent-purple: #8b5cf6;
-  --accent-purple-glow: rgba(139, 92, 246, 0.2);
-  --accent-orange: #f97316;
+  --accent-purple: #0ea5e9; /* Light blue accent */
+  --accent-purple-glow: rgba(14, 165, 233, 0.1);
+  --accent-orange: #f59e0b;
   --accent-green: #10b981;
-  --accent-blue: #3b82f6;
+  --accent-blue: #0ea5e9;
+  --danger-color: #ef4444;
 
   /* Borders & Shadows */
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(255, 255, 255, 0.15);
-  --shadow-bento: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  --border-color: #e2e8f0;
+  --border-glow: #cbd5e1;
+  --shadow-bento: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --radius-md: 16px;
 }
 
 html,
@@ -32,11 +34,10 @@ body {
 body {
   background-color: var(--bg-color);
   color: var(--text-primary);
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-image: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
   display: flex;
   flex-direction: column;
 }
@@ -54,6 +55,7 @@ a {
 h1, h2, h3, h4 {
   margin: 0 0 1rem 0;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 h1 {
@@ -70,32 +72,29 @@ p {
   line-height: 1.5;
 }
 
-/* Glassmorphism utilities */
+/* Glassmorphism utilities - Overridden for Flat CarPlay look */
 .glass-panel {
   background: var(--bg-panel);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-color);
-  border-radius: 32px;
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-bento);
 }
 
 .glass-card {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
-  border-radius: 24px;
+  border-radius: var(--radius-md);
   padding: 24px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-bento);
 }
 
 .glass-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   background: var(--bg-panel-hover);
-  border-color: var(--border-glow);
-  box-shadow: var(--shadow-bento), 0 0 0 1px var(--border-glow);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 .glass-card-image {
@@ -105,9 +104,7 @@ p {
   width: 100%;
   height: 160px;
   object-fit: cover;
-  opacity: 0.9;
-  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  opacity: 1;
 }
 
 .glass-card-content {
