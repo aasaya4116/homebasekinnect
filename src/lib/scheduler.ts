@@ -68,7 +68,7 @@ export async function generateSchedule(daysOut: number = 30) {
     timeMax.setDate(timeMax.getDate() + daysOut - 1);
 
     const res = await calendar.events.list({
-      calendarId: 'aasay412@gmail.com',
+      calendarId: 'grhds1arbnhdqlv5qer1lka718@group.calendar.google.com',
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       singleEvents: true,

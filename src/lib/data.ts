@@ -94,7 +94,7 @@ export async function getTodaySchedule(): Promise<Event[]> {
     timeMax.setHours(23,59,59,999);
 
     const res = await calendar.events.list({
-      calendarId: 'aasay412@gmail.com',
+      calendarId: 'grhds1arbnhdqlv5qer1lka718@group.calendar.google.com',
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       singleEvents: true,
