@@ -8,6 +8,7 @@ export type Meal = {
   prepTime: string;
   cookTime: string;
   type: string;
+  cook: string;
 };
 
 export type Event = {
@@ -57,10 +58,10 @@ export async function getWeeklyMeals(): Promise<Meal[]> {
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
     
-    // Attempt to read from the generated "Scheduled Meals" tab
+    // Read from the generated "Scheduled Meals" tab (up to 100 rows for monthly view)
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `'Scheduled Meals'!A2:E15`, // Skip header
+      range: `'Scheduled Meals'!A2:F100`, // Skip header, includes Cook column
     });
 
     const rows = res.data.values || [];
@@ -72,13 +73,13 @@ export async function getWeeklyMeals(): Promise<Meal[]> {
       type: row[2] || "Dinner",
       prepTime: row[3] || "N/A",
       cookTime: "See Sheet", 
-      ingredients: row[4] || ""
+      ingredients: row[4] || "",
+      cook: row[5] || "Both",
     }));
 
     return meals;
   } catch (error: any) {
     console.log("No schedule found or error:", error.message);
-    // Return empty if schedule hasn't been generated yet
     return [];
   }
 }

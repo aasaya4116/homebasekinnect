@@ -12,14 +12,17 @@ async function run() {
     spreadsheetId: '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw',
     range: 'A1:Z100',
   });
-
   const rows = res.data.values || [];
-  const header = rows[1];
-  console.log('HEADER ROW:', header);
   const dataRows = rows.slice(2);
   const dinners = dataRows.filter(r => r[0] && r[0].toLowerCase() === 'dinner');
-  console.log('\nTOTAL DINNER RECIPES:', dinners.length);
-  dinners.forEach((r, i) => console.log('  ' + (i + 1) + '. ' + (r[1] || '(unnamed)')));
+  console.log('DINNER RECIPES WITH ASSIGNEES:');
+  dinners.forEach((r, i) => {
+    console.log(`  ${i + 1}. ${(r[1] || '(unnamed)').padEnd(45)} Assignee: ${r[2] || '(none)'}`);
+  });
+  console.log('\nTotal:', dinners.length);
+  
+  const assignees = [...new Set(dinners.map(r => r[2]).filter(Boolean))];
+  console.log('Unique Assignees:', assignees);
 }
 
 run();
