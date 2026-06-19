@@ -184,7 +184,9 @@ export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> 
       if (isAllDay && event.start?.date) {
         dateStr = event.start.date;
         if (event.end?.date) {
-          endDateStr = event.end.date;
+          const endD = new Date(event.end.date);
+          endD.setUTCDate(endD.getUTCDate() - 1);
+          endDateStr = endD.toISOString().split('T')[0];
         }
       } else if (!isAllDay && event.start?.dateTime) {
         const startDate = new Date(event.start.dateTime);

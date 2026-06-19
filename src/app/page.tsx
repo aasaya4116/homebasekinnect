@@ -117,7 +117,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       const overlappingEvents = monthlyEvents.filter(evt => {
          if (!evt.date) return false;
          const eStartD = new Date(evt.date);
-         const eEndD = evt.endDate ? new Date(new Date(evt.endDate).getTime() - 1) : new Date(evt.date);
+         const eEndD = evt.endDate ? new Date(evt.endDate) : new Date(evt.date);
          return eStartD <= weekEndD && eEndD >= weekStartD;
       });
 
@@ -125,7 +125,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       
       week.events = overlappingEvents.map(evt => {
         const eStartD = new Date(evt.date!);
-        const eEndD = evt.endDate ? new Date(new Date(evt.endDate).getTime() - 1) : new Date(evt.date!);
+        const eEndD = evt.endDate ? new Date(evt.endDate) : new Date(evt.date!);
         
         let startCol = 1;
         if (eStartD > weekStartD) {
