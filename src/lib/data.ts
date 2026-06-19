@@ -1,14 +1,15 @@
 import { google } from 'googleapis';
-import path from 'path';
+import { getGoogleAuth } from './googleAuth';
 
 export type Meal = {
   id: string;
-  date: string;
   name: string;
-  prepTime: string;
-  cookTime: string;
   type: string;
-  cook: string;
+  prepTime: string;
+  ingredients?: string;
+  date?: string;
+  cookTime?: string;
+  cook?: string;
 };
 
 export type Event = {
@@ -20,43 +21,55 @@ export type Event = {
   person: string;
 };
 
-// Singleton auth client
-const auth = new google.auth.GoogleAuth({
-  keyFile: path.join(process.cwd(), 'google-credentials.json'),
-  scopes: [
-    'https://www.googleapis.com/auth/spreadsheets.readonly', 
-    'https://www.googleapis.com/auth/calendar.readonly'
-  ],
-});
+export type GroceryItem = {
+  id: string;
+  category: string;
+  ingredient: string;
+  quantity: string;
+  status: string;
+  mealSource: string;
+};
 
-export async function getRawInventory(): Promise<any[]> {
-  const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
-  const meta = await sheets.spreadsheets.get({ spreadsheetId });
-  const firstSheetName = meta.data.sheets?.[0]?.properties?.title;
+const auth = getGoogleAuth([
+  'https://www.googleapis.com/auth/spreadsheets.readonly', 
+  'https://www.googleapis.com/auth/calendar.readonly'
+]);
 
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: `${firstSheetName}!A1:Z100`,
-  });
+const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || '';
+const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || '';
 
-  const rows = res.data.values || [];
-  const dataRows = rows.slice(2);
-  const dinners = dataRows.filter(row => row[0]?.toLowerCase() === 'dinner');
-  
-  return dinners.map((row, idx) => ({
-    id: String(idx),
-    name: row[1] || "Eat Out",
-    type: "Dinner",
-    prepTime: row[4] || "N/A",
-    ingredients: row[5] || ""
-  }));
+export async function getRawInventory(): Promise<Meal[]> {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth });
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+    const firstSheetName = meta.data.sheets?.[0]?.properties?.title;
+
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${firstSheetName}!A1:Z100`,
+    });
+
+    const rows = res.data.values || [];
+    const dataRows = rows.slice(2);
+    const dinners = dataRows.filter(row => row[0]?.toLowerCase() === 'dinner');
+    
+    return dinners.map((row, idx) => ({
+      id: String(idx),
+      name: row[1] || "Eat Out",
+      type: "Dinner",
+      prepTime: row[4] || "N/A",
+      ingredients: row[5] || ""
+    }));
+  } catch (error) {
+    console.error("Failed to fetch raw inventory:", error);
+    return [];
+  }
 }
 
 export async function getWeeklyMeals(): Promise<Meal[]> {
   try {
     const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+    const spreadsheetId = SPREADSHEET_ID;
     
     // Read from the generated "Scheduled Meals" tab (up to 100 rows for monthly view)
     const res = await sheets.spreadsheets.values.get({
@@ -94,7 +107,7 @@ export async function getTodaySchedule(): Promise<Event[]> {
     timeMax.setHours(23,59,59,999);
 
     const res = await calendar.events.list({
-      calendarId: 'grhds1arbnhdqlv5qer1lka718@group.calendar.google.com',
+      calendarId: CALENDAR_ID,
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       singleEvents: true,
@@ -149,7 +162,7 @@ export async function getFullDaySchedule(): Promise<Event[]> {
     timeMax.setHours(23,59,59,999);
 
     const res = await calendar.events.list({
-      calendarId: 'grhds1arbnhdqlv5qer1lka718@group.calendar.google.com',
+      calendarId: CALENDAR_ID,
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       singleEvents: true,
@@ -198,7 +211,7 @@ export async function getFullDaySchedule(): Promise<Event[]> {
 export async function getPantryStaples(): Promise<Set<string>> {
   try {
     const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+    const spreadsheetId = SPREADSHEET_ID;
     
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -218,10 +231,10 @@ export async function getPantryStaples(): Promise<Set<string>> {
   }
 }
 
-export async function getGroceryList(): Promise<any[]> {
+export async function getGroceryList(): Promise<GroceryItem[]> {
   try {
     const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
+    const spreadsheetId = SPREADSHEET_ID;
     
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,

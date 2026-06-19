@@ -244,8 +244,8 @@ export function buildGroceryList(
           existing.quantity = existing.quantity ? `${existing.quantity} + ${quantity}` : quantity;
         }
         // Rule 10: Meal Source Tracking
-        if (!existing.mealSources.includes(day.mealName)) {
-          existing.mealSources.push(day.mealName);
+        if (!existing.mealSources.includes(day.name)) {
+          existing.mealSources.push(day.name);
         }
       } else {
         itemMap.set(key, {
@@ -253,7 +253,7 @@ export function buildGroceryList(
           category,
           quantity,
           status: "To Buy",
-          mealSources: [day.mealName],
+          mealSources: [day.name],
         });
       }
     });
@@ -285,7 +285,7 @@ export function buildGroceryList(
           category: getCategory(normalizedName),
           quantity,
           status: "Restock",
-          mealSources: [`Prev: ${day.mealName}`],
+          mealSources: [`Prev: ${day.name}`],
         });
       }
     });

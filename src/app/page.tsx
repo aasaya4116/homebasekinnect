@@ -5,6 +5,8 @@ import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, Sho
 import Clock from "@/components/Clock";
 import Weather from "@/components/Weather";
 
+export const revalidate = 300; // 5 minutes ISR caching
+
 const dayColors = [
   "#0ea5e9", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#ec4899", "#06b6d4",
 ];
@@ -80,8 +82,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
 
   async function handleGenerate() {
     "use server";
-    await generateSchedule(30);
-    revalidatePath("/");
+    try {
+      await generateSchedule(30);
+      revalidatePath("/");
+    } catch (error) {
+      console.error("Failed to generate schedule:", error);
+    }
   }
 
   return (
@@ -153,11 +159,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                       {tomorrowsMeal.name}
                     </span>
                     <span className="widget-badge" style={{ 
-                      background: getCookBadge(tomorrowsMeal.cook).bg, 
-                      color: getCookBadge(tomorrowsMeal.cook).color,
+                      background: getCookBadge(tomorrowsMeal.cook || "Both").bg, 
+                      color: getCookBadge(tomorrowsMeal.cook || "Both").color,
                       fontSize: '0.55rem', padding: '2px 6px',
                     }}>
-                      {getCookBadge(tomorrowsMeal.cook).label}
+                      {getCookBadge(tomorrowsMeal.cook || "Both").label}
                     </span>
                   </div>
                 )}

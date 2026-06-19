@@ -1,16 +1,15 @@
-import { getWeeklyMeals, getTodaySchedule, getRawInventory, getPantryStaples } from './data';
+import { getWeeklyMeals, getTodaySchedule, getRawInventory, getPantryStaples, Meal } from './data';
 import { buildGroceryList } from './groceryEngine';
 import { google } from 'googleapis';
-import path from 'path';
+import { getGoogleAuth } from './googleAuth';
 
-// Need auth to fetch calendar and write to sheets
-const auth = new google.auth.GoogleAuth({
-  keyFile: path.join(process.cwd(), 'google-credentials.json'),
-  scopes: [
-    'https://www.googleapis.com/auth/spreadsheets', // Need write access
-    'https://www.googleapis.com/auth/calendar.readonly'
-  ],
-});
+const auth = getGoogleAuth([
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/calendar.readonly'
+]);
+
+const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || '';
+const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || '';
 
 // ============================================================
 // COOK CADENCE — Who cooks which days
@@ -38,17 +37,18 @@ export async function generateSchedule(daysOut: number = 30) {
     const longMeals = [...cookableMeals.filter(m => !m.prepTime.toLowerCase().includes('quick'))];
     
     // 2. Fetch existing schedule to preserve already-cooked meals (Option B)
-    let existingSchedule: any[] = [];
+    let existingSchedule: Meal[] = [];
     try {
       const sheets = google.sheets({ version: 'v4', auth });
       const existingRes = await sheets.spreadsheets.values.get({
-        spreadsheetId: '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw',
+        spreadsheetId: SPREADSHEET_ID,
         range: `'Scheduled Meals'!A2:F100`,
       });
       const rows = existingRes.data.values || [];
-      existingSchedule = rows.map(row => ({
+      existingSchedule = rows.map((row, idx) => ({
+        id: String(idx),
         date: row[0] || "",
-        mealName: row[1] || "",
+        name: row[1] || "",
         type: row[2] || "",
         prepTime: row[3] || "",
         ingredients: row[4] || "",
@@ -68,7 +68,7 @@ export async function generateSchedule(daysOut: number = 30) {
     timeMax.setDate(timeMax.getDate() + daysOut - 1);
 
     const res = await calendar.events.list({
-      calendarId: 'grhds1arbnhdqlv5qer1lka718@group.calendar.google.com',
+      calendarId: CALENDAR_ID,
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       singleEvents: true,
@@ -78,10 +78,10 @@ export async function generateSchedule(daysOut: number = 30) {
     const events = res.data.items || [];
     
     // 4. Build the schedule
-    const schedule: any[] = [];
+    const schedule: Meal[] = [];
     
     // Shuffle helper to add variety
-    const shuffle = (array: any[]) => array.sort(() => Math.random() - 0.5);
+    const shuffle = (array: Meal[]) => array.sort(() => Math.random() - 0.5);
     shuffle(quickMeals);
     shuffle(longMeals);
 
@@ -126,8 +126,8 @@ export async function generateSchedule(daysOut: number = 30) {
         // Preserve the existing meal — it was already scheduled/cooked
         schedule.push(existingMeal);
         // Track it in usedMeals so we don't repeat it
-        if (existingMeal.mealName && !existingMeal.mealName.includes('Leftovers') && !existingMeal.mealName.includes('Eat Out')) {
-          usedMeals.add(existingMeal.mealName.toLowerCase());
+        if (existingMeal.name && !existingMeal.name.includes('Leftovers') && !existingMeal.name.includes('Eat Out')) {
+          usedMeals.add(existingMeal.name.toLowerCase());
         }
         // Track protein
         const ingStr = existingMeal.ingredients?.toLowerCase() || "";
@@ -142,8 +142,9 @@ export async function generateSchedule(daysOut: number = 30) {
       const yesterday = schedule[i - 1];
       if (yesterday && yesterday.prepTime && yesterday.prepTime.toLowerCase().includes('long')) {
         schedule.push({
+          id: String(i),
           date: dateStr,
-          mealName: "Leftovers from " + yesterday.mealName,
+          name: "Leftovers from " + yesterday.name,
           type: "Dinner",
           prepTime: "0 min (Microwave)",
           ingredients: "Leftovers",
@@ -182,8 +183,9 @@ export async function generateSchedule(daysOut: number = 30) {
       // RULE 1: Take a Break
       if ((dayOfWeek === 5 && !hasEatenOutThisWeek) || busynessScore >= 3) {
         schedule.push({
+          id: String(i),
           date: dateStr,
-          mealName: "Take a Break / Eat Out",
+          name: "Take a Break / Eat Out",
           type: "Dinner",
           prepTime: "0 min",
           ingredients: "",
@@ -201,7 +203,7 @@ export async function generateSchedule(daysOut: number = 30) {
       const backupBucket = preferQuick ? longMeals : quickMeals;
 
       // Helper: pick a meal with RULE 4 (Protein Variety) + RULE 11 (No Repeats)
-      const pickMeal = (bucket: any[], startIdx: number) => {
+      const pickMeal = (bucket: Meal[], startIdx: number) => {
         if (bucket.length === 0) return null;
         
         for (let j = 0; j < bucket.length; j++) {
@@ -257,8 +259,9 @@ export async function generateSchedule(daysOut: number = 30) {
       }
 
       schedule.push({
+        id: String(i),
         date: dateStr,
-        mealName: selectedMeal?.name || "Free Night / Scrounge",
+        name: selectedMeal?.name || "Free Night / Scrounge",
         type: selectedMeal?.type || "Dinner",
         prepTime: selectedMeal?.prepTime || "N/A",
         ingredients: selectedMeal?.ingredients || "",
@@ -279,65 +282,71 @@ export async function generateSchedule(daysOut: number = 30) {
   }
 }
 
-async function writeScheduleToSheet(schedule: any[]) {
-  const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
-  const tabName = 'Scheduled Meals';
+async function writeScheduleToSheet(schedule: Meal[]) {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = SPREADSHEET_ID;
+    const tabName = 'Scheduled Meals';
 
-  // 1. Check if tab exists, if not create it
-  const meta = await sheets.spreadsheets.get({ spreadsheetId });
-  const sheetExists = meta.data.sheets?.find(s => s.properties?.title === tabName);
+    // 1. Check if tab exists, if not create it
+    const meta = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetExists = meta.data.sheets?.find(s => s.properties?.title === tabName);
 
-  if (!sheetExists) {
-    await sheets.spreadsheets.batchUpdate({
+    if (!sheetExists) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: { properties: { title: tabName } }
+          }]
+        }
+      });
+    }
+
+    // 2. Format Data — now includes Cook column
+    const values = [
+      ['Date', 'Meal', 'Type', 'Prep Time', 'Ingredients', 'Cook'], // Header
+      ...schedule.map(s => [s.date, s.name, s.type, s.prepTime, s.ingredients, s.cook])
+    ];
+
+    // 3. Clear existing schedule and rewrite
+    await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      requestBody: {
-        requests: [{
-          addSheet: { properties: { title: tabName } }
-        }]
-      }
+      range: `'${tabName}'!A1:F100`
     });
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `'${tabName}'!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values }
+    });
+  } catch (error) {
+    console.error("Failed to write schedule to sheet:", error);
   }
-
-  // 2. Format Data — now includes Cook column
-  const values = [
-    ['Date', 'Meal', 'Type', 'Prep Time', 'Ingredients', 'Cook'], // Header
-    ...schedule.map(s => [s.date, s.mealName, s.type, s.prepTime, s.ingredients, s.cook])
-  ];
-
-  // 3. Clear existing schedule and rewrite
-  await sheets.spreadsheets.values.clear({
-    spreadsheetId,
-    range: `'${tabName}'!A1:F100`
-  });
-
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `'${tabName}'!A1`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values }
-  });
 }
 
-async function writeGroceryListToSheet(schedule: any[]) {
-  const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = '1nNUA7bnqIpyVo6hDiGl9yk4X88NysvybQvng1MICRyw';
-  const tabName = 'Auto Grocery List';
-
-  // 1. Fetch pantry staples from Google Sheets (Rule 8)
-  const pantryStaples = await getPantryStaples();
-
-  // 2. Fetch previous schedule for auto-replenishment (Rule 9)
-  let previousSchedule: any[] = [];
+async function writeGroceryListToSheet(schedule: Meal[]) {
   try {
-    const prevRes = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: `'Scheduled Meals'!A2:F100`,
-    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = SPREADSHEET_ID;
+    const tabName = 'Auto Grocery List';
+
+    // 1. Fetch pantry staples from Google Sheets (Rule 8)
+    const pantryStaples = await getPantryStaples();
+
+    // 2. Fetch previous schedule for auto-replenishment (Rule 9)
+    let previousSchedule: Meal[] = [];
+    try {
+      const prevRes = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `'Scheduled Meals'!A2:F100`,
+      });
     const prevRows = prevRes.data.values || [];
-    previousSchedule = prevRows.map(row => ({
+    previousSchedule = prevRows.map((row, idx) => ({
+      id: String(idx),
       date: row[0] || "",
-      mealName: row[1] || "",
+      name: row[1] || "",
       type: row[2] || "",
       prepTime: row[3] || "",
       ingredients: row[4] || "",
@@ -391,4 +400,7 @@ async function writeGroceryListToSheet(schedule: any[]) {
     valueInputOption: 'USER_ENTERED',
     requestBody: { values }
   });
+  } catch (error) {
+    console.error("Failed to write grocery list to sheet:", error);
+  }
 }
