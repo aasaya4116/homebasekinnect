@@ -16,38 +16,18 @@ function getCookBadge(cook: string) {
   return { bg: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6", label: "Both" };
 }
 
-// Map meal names to high-quality Unsplash stock image URLs matching keywords
-function getMealImage(mealName: string): string {
-  if (!mealName) return "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=150&h=150&q=80";
-  const name = mealName.toLowerCase();
-  
-  let id = "photo-1498837167922-ddd27525d352"; // Fallback generic food
-  
-  if (name.includes("pizza")) id = "photo-1513104890138-7c749659a591";
-  else if (name.includes("burger") || name.includes("hamburger") || name.includes("sliders")) id = "photo-1568901346375-23c9450c58cd";
-  else if (name.includes("pasta") || name.includes("spaghetti") || name.includes("noodle") || name.includes("lasagna") || name.includes("alfredo") || name.includes("macaroni") || name.includes("mac & cheese") || name.includes("ravioli") || name.includes("penne")) id = "photo-1473093295043-cdd812d0e601";
-  else if (name.includes("salad") || name.includes("greens") || name.includes("caesar")) id = "photo-1512621776951-a57141f2eefd";
-  else if (name.includes("taco") || name.includes("burrito") || name.includes("quesadilla") || name.includes("fajita") || name.includes("enchilada") || name.includes("mexican") || name.includes("nacho")) id = "photo-1565299585323-38d6b0865b47";
-  else if (name.includes("chicken") || name.includes("wings") || name.includes("poultry") || name.includes("curry chicken") || name.includes("breast")) id = "photo-1598514982205-f36b96d1e8d4";
-  else if (name.includes("salmon") || name.includes("fish") || name.includes("trout") || name.includes("seafood") || name.includes("tuna") || name.includes("shrimp") || name.includes("prawn") || name.includes("crab") || name.includes("lobster")) id = "photo-1467003909585-2f8a72700288";
-  else if (name.includes("steak") || name.includes("beef") || name.includes("ribeye") || name.includes("sirloin") || name.includes("pot roast") || name.includes("meatball") || name.includes("meatloaf")) id = "photo-1546833999-b9f581a1996d";
-  else if (name.includes("soup") || name.includes("stew") || name.includes("ramen") || name.includes("chowder") || name.includes("chili")) id = "photo-1547592165-e1d17fed6005";
-  else if (name.includes("curry") || name.includes("tikka") || name.includes("masala")) id = "photo-1631515243349-e0cb75fb8d3a";
-  else if (name.includes("sushi")) id = "photo-1579871494447-9811cf80d66c";
-  else if (name.includes("rice") || name.includes("fried rice") || name.includes("stir fry") || name.includes("stir-fry") || name.includes("bowl")) id = "photo-1512058564366-18510be2db19";
-  else if (name.includes("sandwich") || name.includes("sub") || name.includes("panini") || name.includes("wrap") || name.includes("gyro") || name.includes("blt")) id = "photo-1528735602780-2552fd46c7af";
-  else if (name.includes("egg") || name.includes("omelette") || name.includes("frittata") || name.includes("quiche")) id = "photo-1533089860892-a7c6f0a88666";
-  else if (name.includes("pork") || name.includes("ham") || name.includes("bacon") || name.includes("ribs") || name.includes("chop")) id = "photo-1432139555190-58524dae6a55";
-  else if (name.includes("bbq") || name.includes("barbeque") || name.includes("grill") || name.includes("pulled pork")) id = "photo-1529193591184-b1d58069ecdd";
-  else if (name.includes("hotdog") || name.includes("hot dog") || name.includes("bratwurst")) id = "photo-1573080496219-bb080dd4f877";
-  else if (name.includes("waffle") || name.includes("pancake") || name.includes("french toast")) id = "photo-1528207776546-365bb710ee93";
-  else if (name.includes("potato") || name.includes("fries") || name.includes("tater") || name.includes("baked potato")) id = "photo-1573080496219-bb080dd4f877";
-  else if (name.includes("cheese") || name.includes("fondue")) id = "photo-1486299267070-83823f5448dd";
-  else if (name.includes("veggie") || name.includes("vegetable") || name.includes("tofu") || name.includes("vegan") || name.includes("vegetarian")) id = "photo-1512621776951-a57141f2eefd";
-  else if (name.includes("dessert") || name.includes("cake") || name.includes("pie") || name.includes("cookie") || name.includes("ice cream") || name.includes("sweet")) id = "photo-1587314168485-3236d6710814";
-  else if (name.includes("bread") || name.includes("toast") || name.includes("garlic bread")) id = "photo-1509440159596-0249088772ff";
+const curatedFoodImages = [
+  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+  "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327",
+  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38",
+  "https://images.unsplash.com/photo-1482049016688-2d3e1b311543"
+];
 
-  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=250&h=250&q=80`;
+// Cycle through curated stock images based on the day's index
+function getMealImage(index: number): string {
+  const base = curatedFoodImages[index % curatedFoodImages.length];
+  return `${base}?auto=format&fit=crop&w=250&h=250&q=80`;
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; cook?: string }> }) {
@@ -77,6 +57,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     }) || null;
 
     return {
+      index: i,
       dayNameShort, dayNum, monthShort, meal,
       color: dayColors[i % dayColors.length],
       cook: meal?.cook || "Both",
@@ -182,7 +163,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                 )}
               </div>
               <img 
-                src={getMealImage(todaysMeal.name)} 
+                src={getMealImage(0)} 
                 alt={todaysMeal.name} 
                 style={{ 
                   width: '180px', 
@@ -384,7 +365,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                     
                     {day.meal && day.meal.name !== 'No meal scheduled' && (
                       <img 
-                        src={getMealImage(day.meal.name)} 
+                        src={getMealImage(day.index)} 
                         alt={day.meal.name} 
                         className="meal-row-image" 
                       />
