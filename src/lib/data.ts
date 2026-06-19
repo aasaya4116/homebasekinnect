@@ -139,6 +139,62 @@ export async function getTodaySchedule(): Promise<Event[]> {
   }
 }
 
+export async function getFullDaySchedule(): Promise<Event[]> {
+  try {
+    const calendar = google.calendar({ version: 'v3', auth });
+    
+    const timeMin = new Date();
+    timeMin.setHours(0,0,0,0);
+    const timeMax = new Date();
+    timeMax.setHours(23,59,59,999);
+
+    const res = await calendar.events.list({
+      calendarId: 'grhds1arbnhdqlv5qer1lka718@group.calendar.google.com',
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime'
+    });
+
+    const items = res.data.items || [];
+    const events: Event[] = [];
+
+    items.forEach(event => {
+      const isAllDay = !!event.start?.date;
+      let timeStr = "All Day";
+
+      if (!isAllDay && event.start?.dateTime) {
+        const startDate = new Date(event.start.dateTime);
+        timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
+
+      // Parse person from title (e.g. "Mekhi: Golf" -> person="Mekhi", title="Golf")
+      let person = "Family";
+      let title = event.summary || "Busy";
+      
+      const match = title.match(/^([a-zA-Z]+)\s*[:-]\s*(.*)$/);
+      if (match) {
+        person = match[1];
+        title = match[2];
+      }
+
+      events.push({
+        id: event.id || String(Math.random()),
+        time: timeStr,
+        title: title,
+        location: event.location || undefined,
+        color: isAllDay ? "#f59e0b" : "#10b981",
+        person: person,
+      });
+    });
+
+    return events;
+  } catch (error) {
+    console.error("Failed to fetch full day calendar:", error);
+    return [];
+  }
+}
+
 export async function getPantryStaples(): Promise<Set<string>> {
   try {
     const sheets = google.sheets({ version: 'v4', auth });

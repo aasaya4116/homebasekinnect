@@ -1,6 +1,8 @@
-"use client";
+import { getFullDaySchedule } from "@/lib/data";
 
-export default function ByPerson() {
+export default async function ByPerson() {
+  const events = await getFullDaySchedule();
+
   const familyMembers = [
     { name: "Dad", role: "Parent", color: "var(--accent-blue)" },
     { name: "Mom", role: "Parent", color: "var(--accent-orange)" },
@@ -16,41 +18,64 @@ export default function ByPerson() {
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-        {familyMembers.map((member) => (
-          <section key={member.name} className="glass-card" style={{ padding: '1.5rem', borderTop: `4px solid ${member.color}`, borderRadius: 'var(--radius-md)' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: member.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1rem', fontWeight: 'bold' }}>
-                {member.name[0]}
-              </div>
-              {member.name}
-            </h2>
+        {familyMembers.map((member) => {
+          // Filter events for this specific person AND family events
+          const memberEvents = events.filter(e => 
+            e.person.toLowerCase() === member.name.toLowerCase() || 
+            e.person.toLowerCase() === "family"
+          );
 
-            {member.badge && (
-              <div style={{ marginBottom: '1rem', backgroundColor: 'var(--bg-panel-hover)', padding: '6px 12px', borderRadius: '16px', display: 'inline-block', fontSize: '0.8rem', fontWeight: '600', color: member.color }}>
-                {member.badge}
-              </div>
-            )}
-            
-            <div style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>8:00 AM</p>
-              <p style={{ fontWeight: '600', margin: 0 }}>{member.role === 'Kid' ? 'School' : 'Work'}</p>
-            </div>
+          return (
+            <section key={member.name} className="glass-card" style={{ padding: '1.5rem', borderTop: `4px solid ${member.color}`, borderRadius: 'var(--radius-md)' }}>
+              <h2 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: member.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1rem', fontWeight: 'bold' }}>
+                  {member.name[0]}
+                </div>
+                {member.name}
+              </h2>
 
-            {member.role === 'Kid' && (
-              <div style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: 'linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent)' }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>4:00 PM</p>
-                <p style={{ fontWeight: '600', margin: 0 }}>Golf Practice ({member.name === "Mekhi" ? "Intermediate" : "Basic"})</p>
-              </div>
-            )}
-
-            {member.role === 'Parent' && (
-              <div style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>7:00 PM</p>
-                <p style={{ fontWeight: '600', margin: 0 }}>Dinner Prep / Family Time</p>
-              </div>
-            )}
-          </section>
-        ))}
+              {member.badge && (
+                <div style={{ marginBottom: '1rem', backgroundColor: 'var(--bg-panel-hover)', padding: '6px 12px', borderRadius: '16px', display: 'inline-block', fontSize: '0.8rem', fontWeight: '600', color: member.color }}>
+                  {member.badge}
+                </div>
+              )}
+              
+              {memberEvents.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {memberEvents.map((event) => {
+                    const isFamily = event.person.toLowerCase() === "family";
+                    return (
+                      <div key={event.id} style={{ 
+                        padding: '1rem', 
+                        border: '1px solid var(--border-color)', 
+                        borderRadius: 'var(--radius-md)', 
+                        background: isFamily ? 'linear-gradient(to right, rgba(255, 255, 255, 0.03), transparent)' : `linear-gradient(to right, ${member.color}15, transparent)`,
+                        borderLeft: `3px solid ${isFamily ? 'var(--text-tertiary)' : member.color}`
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>{event.time}</p>
+                          {isFamily && (
+                            <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '8px', background: 'var(--bg-panel-hover)', color: 'var(--text-tertiary)' }}>
+                              FAMILY
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontWeight: '600', margin: 0, color: 'var(--text-primary)', lineHeight: 1.2 }}>{event.title}</p>
+                        {event.location && (
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px', margin: 0 }}>📍 {event.location}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-tertiary)', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem' }}>No events today</p>
+                </div>
+              )}
+            </section>
+          );
+        })}
       </div>
     </div>
   );
