@@ -16,6 +16,38 @@ function getCookBadge(cook: string) {
   return { bg: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6", label: "Both" };
 }
 
+// Map meal names to appropriate emojis based on keywords
+function getMealEmoji(mealName: string): string {
+  if (!mealName) return "🍽️";
+  const name = mealName.toLowerCase();
+  
+  if (name.includes("pizza")) return "🍕";
+  if (name.includes("burger") || name.includes("hamburger") || name.includes("sliders")) return "🍔";
+  if (name.includes("pasta") || name.includes("spaghetti") || name.includes("noodle") || name.includes("lasagna") || name.includes("alfredo") || name.includes("macaroni") || name.includes("mac & cheese") || name.includes("ravioli") || name.includes("penne")) return "🍝";
+  if (name.includes("salad") || name.includes("greens") || name.includes("caesar")) return "🥗";
+  if (name.includes("taco") || name.includes("burrito") || name.includes("quesadilla") || name.includes("fajita") || name.includes("enchilada") || name.includes("mexican") || name.includes("nacho")) return "🌮";
+  if (name.includes("chicken") || name.includes("wings") || name.includes("poultry") || name.includes("curry chicken") || name.includes("breast")) return "🍗";
+  if (name.includes("salmon") || name.includes("fish") || name.includes("trout") || name.includes("seafood") || name.includes("tuna") || name.includes("shrimp") || name.includes("prawn") || name.includes("crab") || name.includes("lobster")) return "🐟";
+  if (name.includes("steak") || name.includes("beef") || name.includes("ribeye") || name.includes("sirloin") || name.includes("pot roast") || name.includes("meatball") || name.includes("meatloaf")) return "🥩";
+  if (name.includes("soup") || name.includes("stew") || name.includes("ramen") || name.includes("chowder") || name.includes("chili")) return "🍲";
+  if (name.includes("curry") || name.includes("tikka") || name.includes("masala")) return "🍛";
+  if (name.includes("sushi")) return "🍣";
+  if (name.includes("rice") || name.includes("fried rice") || name.includes("stir fry") || name.includes("stir-fry") || name.includes("bowl")) return "🍚";
+  if (name.includes("sandwich") || name.includes("sub") || name.includes("panini") || name.includes("wrap") || name.includes("gyro") || name.includes("blt")) return "🥪";
+  if (name.includes("egg") || name.includes("omelette") || name.includes("frittata") || name.includes("quiche")) return "🍳";
+  if (name.includes("pork") || name.includes("ham") || name.includes("bacon") || name.includes("ribs") || name.includes("chop")) return "🥓";
+  if (name.includes("bbq") || name.includes("barbeque") || name.includes("grill") || name.includes("pulled pork")) return "🍖";
+  if (name.includes("hotdog") || name.includes("hot dog") || name.includes("bratwurst")) return "🌭";
+  if (name.includes("waffle") || name.includes("pancake") || name.includes("french toast")) return "🥞";
+  if (name.includes("potato") || name.includes("fries") || name.includes("tater") || name.includes("baked potato")) return "🍟";
+  if (name.includes("cheese") || name.includes("fondue")) return "🧀";
+  if (name.includes("veggie") || name.includes("vegetable") || name.includes("tofu") || name.includes("vegan") || name.includes("vegetarian")) return "🌱";
+  if (name.includes("dessert") || name.includes("cake") || name.includes("pie") || name.includes("cookie") || name.includes("ice cream") || name.includes("sweet")) return "🍰";
+  if (name.includes("bread") || name.includes("toast") || name.includes("garlic bread")) return "🍞";
+  
+  return "🍲"; // Fallback food icon
+}
+
 export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; cook?: string }> }) {
   const params = await searchParams;
   const view = params.view || "week";
@@ -108,7 +140,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                   </span>
                 )}
               </div>
-              <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>{todaysMeal.name}</h2>
+              <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '2rem' }}>{getMealEmoji(todaysMeal.name)}</span>
+                {todaysMeal.name}
+              </h2>
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                 <span className="dinner-meta-chip">
                   <ClockIcon size={13} color="var(--accent-blue)"/> {todaysMeal.prepTime}
@@ -300,8 +335,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                       </span>
                     </div>
                     {day.meal && day.meal.name !== 'No meal scheduled' ? (
-                      <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                        {day.meal.name.length > 20 ? day.meal.name.slice(0, 18) + '…' : day.meal.name}
+                      <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{getMealEmoji(day.meal.name)}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {day.meal.name.length > 15 ? day.meal.name.slice(0, 13) + '…' : day.meal.name}
+                        </span>
                       </div>
                     ) : (
                       <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>—</div>
@@ -329,6 +367,26 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                       <div className="meal-row-day-num" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined }}>{day.dayNum}</div>
                     </div>
                     <div className="meal-row-divider" style={{ backgroundColor: day.isToday ? 'var(--accent-blue)' : day.color }} />
+                    
+                    {day.meal && day.meal.name !== 'No meal scheduled' && (
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        background: 'var(--bg-panel-hover)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.4rem',
+                        border: '1px solid var(--border-color)',
+                        flexShrink: 0,
+                        marginLeft: '4px',
+                        marginRight: '2px'
+                      }}>
+                        {getMealEmoji(day.meal.name)}
+                      </div>
+                    )}
+
                     <div className="meal-row-info">
                       {day.meal && day.meal.name !== 'No meal scheduled' ? (
                         <>
