@@ -185,8 +185,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                 src={getMealImage(todaysMeal.name)} 
                 alt={todaysMeal.name} 
                 style={{ 
-                  width: '120px', 
-                  height: '120px', 
+                  width: '180px', 
+                  height: '180px', 
                   borderRadius: '12px', 
                   objectFit: 'cover', 
                   border: '1px solid var(--border-color)',
