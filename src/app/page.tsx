@@ -1,4 +1,4 @@
-import { getWeeklyMeals, getTodaySchedule, getGroceryList } from "@/lib/data";
+import { getWeeklyMeals, getTodaySchedule, getGroceryList, getFullDaySchedule } from "@/lib/data";
 import { generateSchedule } from "@/lib/scheduler";
 import { revalidatePath } from "next/cache";
 import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, ShoppingCart, RefreshCw, User, ArrowRight } from "lucide-react";
@@ -43,6 +43,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
 
   // Build day array — 7 for week, 30 for month
   const daysCount = view === "month" ? 30 : 7;
+  const monthlyEvents = view === "month" ? await getFullDaySchedule(30) : [];
 
   const days = Array.from({ length: daysCount }).map((_, i) => {
     const d = new Date();
@@ -51,6 +52,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     const dayNum = d.getDate();
     const monthShort = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
 
+    const targetDateStr = d.getFullYear() + "-" + 
+                          String(d.getMonth() + 1).padStart(2, '0') + "-" + 
+                          String(d.getDate()).padStart(2, '0');
+
     const meal = allMeals.find(m => {
       if (!m.date || m.date === "Unknown Date") return false;
       const normalizedDateStr = m.date.replace(/-/g, '/');
@@ -58,12 +63,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       return mDate.getDate() === d.getDate() && mDate.getMonth() === d.getMonth() && mDate.getFullYear() === d.getFullYear();
     }) || null;
 
+    const dayEvents = monthlyEvents.filter(e => e.date === targetDateStr);
+
     return {
       index: i,
       dayNameShort, dayNum, monthShort, meal,
       color: dayColors[i % dayColors.length],
       cook: meal?.cook || "Both",
       isToday: i === 0,
+      events: dayEvents,
     };
   });
 
@@ -337,13 +345,40 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                       </span>
                     </div>
                     {day.meal && day.meal.name !== 'No meal scheduled' ? (
-                      <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: '4px' }}>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {day.meal.name.length > 20 ? day.meal.name.slice(0, 18) + '…' : day.meal.name}
+                          🍽️ {day.meal.name.length > 18 ? day.meal.name.slice(0, 16) + '…' : day.meal.name}
                         </span>
                       </div>
                     ) : (
-                      <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>—</div>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>—</div>
+                    )}
+                    
+                    {/* Render Activities for the Month Grid */}
+                    {day.events && day.events.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {day.events.slice(0, 2).map((evt: any, eIdx: number) => (
+                          <div key={eIdx} style={{ 
+                            fontSize: '0.55rem', 
+                            color: 'var(--text-secondary)', 
+                            background: 'var(--bg-panel)',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                            borderLeft: `2px solid ${evt.color || 'var(--accent-blue)'}`,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {evt.time !== "All Day" && <span style={{ opacity: 0.7, marginRight: '2px' }}>{evt.time.split(' ')[0]}</span>}
+                            {evt.title}
+                          </div>
+                        ))}
+                        {day.events.length > 2 && (
+                          <div style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                            +{day.events.length - 2} more
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 );

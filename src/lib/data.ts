@@ -19,6 +19,7 @@ export type Event = {
   location?: string;
   color: string;
   person: string;
+  date?: string;
 };
 
 export type GroceryItem = {
@@ -152,7 +153,7 @@ export async function getTodaySchedule(): Promise<Event[]> {
   }
 }
 
-export async function getFullDaySchedule(): Promise<Event[]> {
+export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> {
   try {
     const calendar = google.calendar({ version: 'v3', auth });
     
@@ -160,6 +161,7 @@ export async function getFullDaySchedule(): Promise<Event[]> {
     timeMin.setHours(0,0,0,0);
     const timeMax = new Date();
     timeMax.setHours(23,59,59,999);
+    timeMax.setDate(timeMax.getDate() + daysOut - 1);
 
     const res = await calendar.events.list({
       calendarId: CALENDAR_ID,
@@ -175,10 +177,16 @@ export async function getFullDaySchedule(): Promise<Event[]> {
     items.forEach(event => {
       const isAllDay = !!event.start?.date;
       let timeStr = "All Day";
+      let dateStr = "";
 
-      if (!isAllDay && event.start?.dateTime) {
+      if (isAllDay) {
+        dateStr = event.start?.date || "";
+      } else if (event.start?.dateTime) {
         const startDate = new Date(event.start.dateTime);
         timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        dateStr = startDate.getFullYear() + "-" + 
+                 String(startDate.getMonth() + 1).padStart(2, '0') + "-" + 
+                 String(startDate.getDate()).padStart(2, '0');
       }
 
       // Parse person from title (e.g. "Mekhi: Golf" -> person="Mekhi", title="Golf")
@@ -198,6 +206,7 @@ export async function getFullDaySchedule(): Promise<Event[]> {
         location: event.location || undefined,
         color: isAllDay ? "#f59e0b" : "#10b981",
         person: person,
+        date: dateStr,
       });
     });
 
