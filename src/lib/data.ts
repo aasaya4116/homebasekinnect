@@ -20,6 +20,7 @@ export type Event = {
   color: string;
   person: string;
   date?: string;
+  endDate?: string;
 };
 
 export type GroceryItem = {
@@ -177,29 +178,26 @@ export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> 
     items.forEach(event => {
       const isAllDay = !!event.start?.date;
       let timeStr = "All Day";
-      let datesToPush: string[] = [];
+      let dateStr = "";
+      let endDateStr: string | undefined = undefined;
 
       if (isAllDay && event.start?.date) {
-        datesToPush.push(event.start.date);
-        
+        dateStr = event.start.date;
         if (event.end?.date) {
-          const startD = new Date(event.start.date);
-          const endD = new Date(event.end.date);
-          let currentD = new Date(startD);
-          currentD.setUTCDate(currentD.getUTCDate() + 1);
-          
-          while (currentD < endD) {
-            datesToPush.push(currentD.toISOString().split('T')[0]);
-            currentD.setUTCDate(currentD.getUTCDate() + 1);
-          }
+          endDateStr = event.end.date;
         }
       } else if (!isAllDay && event.start?.dateTime) {
         const startDate = new Date(event.start.dateTime);
         timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        const dStr = startDate.getFullYear() + "-" + 
+        dateStr = startDate.getFullYear() + "-" + 
                  String(startDate.getMonth() + 1).padStart(2, '0') + "-" + 
                  String(startDate.getDate()).padStart(2, '0');
-        datesToPush.push(dStr);
+        if (event.end?.dateTime) {
+          const eDate = new Date(event.end.dateTime);
+          endDateStr = eDate.getFullYear() + "-" + 
+                 String(eDate.getMonth() + 1).padStart(2, '0') + "-" + 
+                 String(eDate.getDate()).padStart(2, '0');
+        }
       }
 
       // Parse person from title (e.g. "Mekhi: Golf" -> person="Mekhi", title="Golf")
@@ -212,16 +210,15 @@ export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> 
         title = match[2];
       }
 
-      datesToPush.forEach(dateStr => {
-        events.push({
-          id: event.id || String(Math.random()),
-          time: timeStr,
-          title: title,
-          location: event.location || undefined,
-          color: isAllDay ? "#f59e0b" : "#10b981",
-          person: person,
-          date: dateStr,
-        });
+      events.push({
+        id: event.id || String(Math.random()),
+        time: timeStr,
+        title: title,
+        location: event.location || undefined,
+        color: isAllDay ? "#f59e0b" : "#10b981",
+        person: person,
+        date: dateStr,
+        endDate: endDateStr,
       });
     });
 
