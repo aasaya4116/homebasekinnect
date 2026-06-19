@@ -1,19 +1,9 @@
-import "./page.module.css";
 import { getWeeklyMeals, getTodaySchedule, getGroceryList } from "@/lib/data";
 import { generateSchedule } from "@/lib/scheduler";
 import { revalidatePath } from "next/cache";
-import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, ChefHat, ShoppingCart, RefreshCw, User } from "lucide-react";
+import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, ShoppingCart, RefreshCw, User, ArrowRight } from "lucide-react";
 import Clock from "@/components/Clock";
-
-const curatedFoodImages = [
-  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400&h=400",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=400&h=400",
-  "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=80&w=400&h=400",
-  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=400&h=400",
-  "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&q=80&w=400&h=400",
-  "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=400&h=400",
-  "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&q=80&w=400&h=400",
-];
+import Weather from "@/components/Weather";
 
 const dayColors = [
   "#0ea5e9", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#ec4899", "#06b6d4",
@@ -49,14 +39,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       if (!m.date || m.date === "Unknown Date") return false;
       const normalizedDateStr = m.date.replace(/-/g, '/');
       const mDate = new Date(normalizedDateStr);
-      return mDate.getDate() === d.getDate() && mDate.getMonth() === d.getMonth();
+      return mDate.getDate() === d.getDate() && mDate.getMonth() === d.getMonth() && mDate.getFullYear() === d.getFullYear();
     }) || null;
 
     return {
       dayNameShort, dayNum, monthShort, meal,
-      image: curatedFoodImages[i % curatedFoodImages.length],
       color: dayColors[i % dayColors.length],
       cook: meal?.cook || "Both",
+      isToday: i === 0,
     };
   });
 
@@ -66,6 +56,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     : days.filter(d => d.cook.toLowerCase() === cookFilter.toLowerCase());
 
   const todaysMeal = days[0].meal;
+  const tomorrowsMeal = days.length > 1 ? days[1].meal : null;
 
   // Grocery summary
   const toBuyCount = groceryItems.filter(i => i.status === "To Buy").length;
@@ -85,11 +76,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
           ROW 1: CLOCK BAR (slim)
           ======================================== */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Clock />
-        <form action={handleGenerate}>
-          <button type="submit" className="btn-primary">
-            <CalendarIcon size={14} style={{ marginRight: '6px' }}/>
-            Auto-Schedule Month
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          <Clock />
+          <Weather />
+        </div>
+        <form action={handleGenerate} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button type="submit" className="btn-primary" style={{ fontSize: '0.7rem', padding: '8px 14px', opacity: 0.6 }}>
+            <CalendarIcon size={12} style={{ marginRight: '5px' }}/>
+            Regenerate
           </button>
         </form>
       </div>
@@ -102,38 +96,59 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         {/* LEFT: Tonight's Dinner — HERO */}
         <div className="widget" style={{ padding: 0, overflow: 'hidden' }}>
           {todaysMeal && todaysMeal.name !== 'No meal scheduled' ? (
-            <div style={{ display: 'flex', height: '100%' }}>
-              <div style={{ width: '45%', position: 'relative', minHeight: '200px' }}>
-                <img src={days[0].image} alt="Food" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <span className="widget-badge" style={{ background: 'var(--accent-orange-glow)', color: 'var(--accent-orange)' }}>
+                  🍽️ TONIGHT'S DINNER
+                </span>
+                {todaysMeal.cook && (
+                  <span className="widget-badge" style={{ background: getCookBadge(todaysMeal.cook).bg, color: getCookBadge(todaysMeal.cook).color }}>
+                    <User size={10} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '3px' }}/> 
+                    {getCookBadge(todaysMeal.cook).label}
+                  </span>
+                )}
               </div>
-              <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '55%' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span className="widget-badge" style={{ background: 'var(--accent-orange-glow)', color: 'var(--accent-orange)' }}>
-                    TONIGHT'S DINNER
-                  </span>
-                  {todaysMeal.cook && (
-                    <span className="widget-badge" style={{ background: getCookBadge(todaysMeal.cook).bg, color: getCookBadge(todaysMeal.cook).color }}>
-                      <User size={10} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '3px' }}/> 
-                      {getCookBadge(todaysMeal.cook).label}
-                    </span>
-                  )}
-                </div>
-                <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>{todaysMeal.name}</h2>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <span className="dinner-meta-chip">
-                    <ClockIcon size={13} color="var(--accent-blue)"/> {todaysMeal.prepTime}
-                  </span>
-                  <span className="dinner-meta-chip">
-                    <Flame size={13} color="var(--accent-orange)"/> {todaysMeal.type}
-                  </span>
-                </div>
+              <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>{todaysMeal.name}</h2>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <span className="dinner-meta-chip">
+                  <ClockIcon size={13} color="var(--accent-blue)"/> {todaysMeal.prepTime}
+                </span>
+                <span className="dinner-meta-chip">
+                  <Flame size={13} color="var(--accent-orange)"/> {todaysMeal.type}
+                </span>
               </div>
+
+              {/* Tomorrow Preview */}
+              {tomorrowsMeal && tomorrowsMeal.name !== 'No meal scheduled' && (
+                <div style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', 
+                  padding: '8px 12px', borderRadius: '10px',
+                  background: 'var(--bg-panel-hover)', 
+                  border: '1px solid var(--border-color)',
+                  marginTop: 'auto',
+                }}>
+                  <ArrowRight size={12} color="var(--text-tertiary)"/>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                    Tomorrow:
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                    {tomorrowsMeal.name}
+                  </span>
+                  <span className="widget-badge" style={{ 
+                    background: getCookBadge(tomorrowsMeal.cook).bg, 
+                    color: getCookBadge(tomorrowsMeal.cook).color,
+                    fontSize: '0.55rem', padding: '2px 6px',
+                  }}>
+                    {getCookBadge(tomorrowsMeal.cook).label}
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="empty-state" style={{ minHeight: '200px' }}>
               <Utensils size={40} />
               <span style={{ fontSize: '1rem', fontWeight: 600 }}>No Meal Scheduled</span>
-              <span style={{ fontSize: '0.75rem' }}>Click Auto-Schedule to generate your month</span>
+              <span style={{ fontSize: '0.75rem' }}>Click Regenerate to generate your month</span>
             </div>
           )}
         </div>
@@ -273,13 +288,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                 const badge = getCookBadge(day.cook);
                 return (
                   <div key={idx} style={{
-                    background: idx === 0 ? 'var(--accent-blue-glow)' : 'var(--bg-panel-hover)',
+                    background: day.isToday ? 'var(--accent-blue-glow)' : 'var(--bg-panel-hover)',
                     borderRadius: '8px', padding: '6px', minHeight: '65px',
-                    border: idx === 0 ? '1px solid var(--accent-blue)' : '1px solid transparent',
-                    opacity: idx === 0 ? 0.7 : 1,
+                    border: day.isToday ? '1.5px solid var(--accent-blue)' : '1px solid transparent',
+                    boxShadow: day.isToday ? '0 0 12px rgba(14, 165, 233, 0.2)' : 'none',
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{day.dayNum}</span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)' }}>{day.dayNum}</span>
                       <span style={{ fontSize: '0.5rem', fontWeight: 700, color: badge.color, background: badge.bg, padding: '1px 5px', borderRadius: '4px' }}>
                         {badge.label}
                       </span>
@@ -301,12 +316,19 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
               {filteredDays.map((day, idx) => {
                 const badge = getCookBadge(day.cook);
                 return (
-                  <div key={idx} className="meal-row" style={{ opacity: idx === 0 ? 0.45 : 1 }}>
+                  <div key={idx} className="meal-row" style={{ 
+                    opacity: 1,
+                    background: day.isToday ? 'var(--accent-blue-glow)' : 'transparent',
+                    borderRadius: day.isToday ? 'var(--radius-sm)' : '0',
+                    padding: day.isToday ? '0.85rem 0.75rem' : '0.85rem 0',
+                    border: day.isToday ? '1px solid rgba(14, 165, 233, 0.3)' : 'none',
+                    borderBottom: day.isToday ? '1px solid rgba(14, 165, 233, 0.3)' : '1px solid var(--border-subtle)',
+                  }}>
                     <div className="meal-row-day">
-                      <div className="meal-row-day-name">{day.dayNameShort}</div>
-                      <div className="meal-row-day-num">{day.dayNum}</div>
+                      <div className="meal-row-day-name" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined }}>{day.dayNameShort}</div>
+                      <div className="meal-row-day-num" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined }}>{day.dayNum}</div>
                     </div>
-                    <div className="meal-row-divider" style={{ backgroundColor: day.color }} />
+                    <div className="meal-row-divider" style={{ backgroundColor: day.isToday ? 'var(--accent-blue)' : day.color }} />
                     <div className="meal-row-info">
                       {day.meal && day.meal.name !== 'No meal scheduled' ? (
                         <>
@@ -324,9 +346,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                     }}>
                       {badge.label}
                     </span>
-                    {day.meal && day.meal.name !== 'No meal scheduled' && (
-                      <img src={day.image} alt="Food" className="meal-row-image" />
-                    )}
                   </div>
                 );
               })}

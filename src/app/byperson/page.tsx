@@ -6,8 +6,8 @@ export default async function ByPerson() {
   const familyMembers = [
     { name: "Dad", role: "Parent", color: "var(--accent-blue)" },
     { name: "Mom", role: "Parent", color: "var(--accent-orange)" },
-    { name: "Mekhi", role: "Kid", color: "var(--accent-green)", badge: "Intermediate Golf" },
-    { name: "Khalil", role: "Kid", color: "var(--accent-purple)", badge: "Basic Golf" },
+    { name: "Mekhi", role: "Kid", color: "var(--accent-green)" },
+    { name: "Khalil", role: "Kid", color: "var(--accent-purple)" },
   ];
 
   return (
@@ -17,7 +17,7 @@ export default async function ByPerson() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Individual schedules for Today</p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
         {familyMembers.map((member) => {
           // Filter events for this specific person AND family events
           const memberEvents = events.filter(e => 
@@ -26,7 +26,7 @@ export default async function ByPerson() {
           );
 
           return (
-            <section key={member.name} className="glass-card" style={{ padding: '1.5rem', borderTop: `4px solid ${member.color}`, borderRadius: 'var(--radius-md)' }}>
+            <section key={member.name} className="widget" style={{ padding: '1.5rem', borderTop: `4px solid ${member.color}`, borderRadius: 'var(--radius-md)' }}>
               <h2 style={{ fontSize: '1.4rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: member.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1rem', fontWeight: 'bold' }}>
                   {member.name[0]}
@@ -34,11 +34,6 @@ export default async function ByPerson() {
                 {member.name}
               </h2>
 
-              {member.badge && (
-                <div style={{ marginBottom: '1rem', backgroundColor: 'var(--bg-panel-hover)', padding: '6px 12px', borderRadius: '16px', display: 'inline-block', fontSize: '0.8rem', fontWeight: '600', color: member.color }}>
-                  {member.badge}
-                </div>
-              )}
               
               {memberEvents.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

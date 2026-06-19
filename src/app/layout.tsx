@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 import Navigation from "@/components/Navigation";
+import AutoRefresh from "@/components/AutoRefresh";
 
 export default function RootLayout({
   children,
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable}`}>
       <body>
+        <AutoRefresh intervalMs={5 * 60 * 1000} />
         <div className="container">
           <Navigation />
           {children}

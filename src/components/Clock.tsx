@@ -24,8 +24,16 @@ export default function Clock() {
 
   return (
     <div>
+      <style>{`
+        @keyframes blink-colon {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
       <div className="clock-time" style={{ fontSize: '3rem' }}>
-        {displayHour}:{minutes}
+        {displayHour}
+        <span style={{ animation: 'blink-colon 1s ease-in-out infinite' }}>:</span>
+        {minutes}
         <span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: '6px' }}>{ampm}</span>
       </div>
       <div className="clock-date" style={{ fontSize: '0.9rem' }}>{dateStr}</div>
