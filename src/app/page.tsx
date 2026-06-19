@@ -16,36 +16,38 @@ function getCookBadge(cook: string) {
   return { bg: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6", label: "Both" };
 }
 
-// Map meal names to appropriate emojis based on keywords
-function getMealEmoji(mealName: string): string {
-  if (!mealName) return "🍽️";
+// Map meal names to high-quality Unsplash stock image URLs matching keywords
+function getMealImage(mealName: string): string {
+  if (!mealName) return "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=150&h=150&q=80";
   const name = mealName.toLowerCase();
   
-  if (name.includes("pizza")) return "🍕";
-  if (name.includes("burger") || name.includes("hamburger") || name.includes("sliders")) return "🍔";
-  if (name.includes("pasta") || name.includes("spaghetti") || name.includes("noodle") || name.includes("lasagna") || name.includes("alfredo") || name.includes("macaroni") || name.includes("mac & cheese") || name.includes("ravioli") || name.includes("penne")) return "🍝";
-  if (name.includes("salad") || name.includes("greens") || name.includes("caesar")) return "🥗";
-  if (name.includes("taco") || name.includes("burrito") || name.includes("quesadilla") || name.includes("fajita") || name.includes("enchilada") || name.includes("mexican") || name.includes("nacho")) return "🌮";
-  if (name.includes("chicken") || name.includes("wings") || name.includes("poultry") || name.includes("curry chicken") || name.includes("breast")) return "🍗";
-  if (name.includes("salmon") || name.includes("fish") || name.includes("trout") || name.includes("seafood") || name.includes("tuna") || name.includes("shrimp") || name.includes("prawn") || name.includes("crab") || name.includes("lobster")) return "🐟";
-  if (name.includes("steak") || name.includes("beef") || name.includes("ribeye") || name.includes("sirloin") || name.includes("pot roast") || name.includes("meatball") || name.includes("meatloaf")) return "🥩";
-  if (name.includes("soup") || name.includes("stew") || name.includes("ramen") || name.includes("chowder") || name.includes("chili")) return "🍲";
-  if (name.includes("curry") || name.includes("tikka") || name.includes("masala")) return "🍛";
-  if (name.includes("sushi")) return "🍣";
-  if (name.includes("rice") || name.includes("fried rice") || name.includes("stir fry") || name.includes("stir-fry") || name.includes("bowl")) return "🍚";
-  if (name.includes("sandwich") || name.includes("sub") || name.includes("panini") || name.includes("wrap") || name.includes("gyro") || name.includes("blt")) return "🥪";
-  if (name.includes("egg") || name.includes("omelette") || name.includes("frittata") || name.includes("quiche")) return "🍳";
-  if (name.includes("pork") || name.includes("ham") || name.includes("bacon") || name.includes("ribs") || name.includes("chop")) return "🥓";
-  if (name.includes("bbq") || name.includes("barbeque") || name.includes("grill") || name.includes("pulled pork")) return "🍖";
-  if (name.includes("hotdog") || name.includes("hot dog") || name.includes("bratwurst")) return "🌭";
-  if (name.includes("waffle") || name.includes("pancake") || name.includes("french toast")) return "🥞";
-  if (name.includes("potato") || name.includes("fries") || name.includes("tater") || name.includes("baked potato")) return "🍟";
-  if (name.includes("cheese") || name.includes("fondue")) return "🧀";
-  if (name.includes("veggie") || name.includes("vegetable") || name.includes("tofu") || name.includes("vegan") || name.includes("vegetarian")) return "🌱";
-  if (name.includes("dessert") || name.includes("cake") || name.includes("pie") || name.includes("cookie") || name.includes("ice cream") || name.includes("sweet")) return "🍰";
-  if (name.includes("bread") || name.includes("toast") || name.includes("garlic bread")) return "🍞";
+  let id = "photo-1498837167922-ddd27525d352"; // Fallback generic food
   
-  return "🍲"; // Fallback food icon
+  if (name.includes("pizza")) id = "photo-1513104890138-7c749659a591";
+  else if (name.includes("burger") || name.includes("hamburger") || name.includes("sliders")) id = "photo-1568901346375-23c9450c58cd";
+  else if (name.includes("pasta") || name.includes("spaghetti") || name.includes("noodle") || name.includes("lasagna") || name.includes("alfredo") || name.includes("macaroni") || name.includes("mac & cheese") || name.includes("ravioli") || name.includes("penne")) id = "photo-1563379091339-03b21ab4a4f8";
+  else if (name.includes("salad") || name.includes("greens") || name.includes("caesar")) id = "photo-1512621776951-a57141f2eefd";
+  else if (name.includes("taco") || name.includes("burrito") || name.includes("quesadilla") || name.includes("fajita") || name.includes("enchilada") || name.includes("mexican") || name.includes("nacho")) id = "photo-1565299585323-38d6b0865b47";
+  else if (name.includes("chicken") || name.includes("wings") || name.includes("poultry") || name.includes("curry chicken") || name.includes("breast")) id = "photo-1604503468506-a8da13d82791";
+  else if (name.includes("salmon") || name.includes("fish") || name.includes("trout") || name.includes("seafood") || name.includes("tuna") || name.includes("shrimp") || name.includes("prawn") || name.includes("crab") || name.includes("lobster")) id = "photo-1485921325814-a5341826fc8e";
+  else if (name.includes("steak") || name.includes("beef") || name.includes("ribeye") || name.includes("sirloin") || name.includes("pot roast") || name.includes("meatball") || name.includes("meatloaf")) id = "photo-1600891964599-f61ba0e24092";
+  else if (name.includes("soup") || name.includes("stew") || name.includes("ramen") || name.includes("chowder") || name.includes("chili")) id = "photo-1547592165-e1d17fed6005";
+  else if (name.includes("curry") || name.includes("tikka") || name.includes("masala")) id = "photo-1565557623262-b51c2513a641";
+  else if (name.includes("sushi")) id = "photo-1579871494447-9811cf80d66c";
+  else if (name.includes("rice") || name.includes("fried rice") || name.includes("stir fry") || name.includes("stir-fry") || name.includes("bowl")) id = "photo-1512058564366-18510be2db19";
+  else if (name.includes("sandwich") || name.includes("sub") || name.includes("panini") || name.includes("wrap") || name.includes("gyro") || name.includes("blt")) id = "photo-1509722747041-616f39b57569";
+  else if (name.includes("egg") || name.includes("omelette") || name.includes("frittata") || name.includes("quiche")) id = "photo-1525351484163-7529414344d8";
+  else if (name.includes("pork") || name.includes("ham") || name.includes("bacon") || name.includes("ribs") || name.includes("chop")) id = "photo-1602498456745-e9503b30470b";
+  else if (name.includes("bbq") || name.includes("barbeque") || name.includes("grill") || name.includes("pulled pork")) id = "photo-1529193591184-b1d58069ecdd";
+  else if (name.includes("hotdog") || name.includes("hot dog") || name.includes("bratwurst")) id = "photo-1573080496219-bb080dd4f877";
+  else if (name.includes("waffle") || name.includes("pancake") || name.includes("french toast")) id = "photo-1528207776546-365bb710ee93";
+  else if (name.includes("potato") || name.includes("fries") || name.includes("tater") || name.includes("baked potato")) id = "photo-1573080496219-bb080dd4f877";
+  else if (name.includes("cheese") || name.includes("fondue")) id = "photo-1486299267070-83823f5448dd";
+  else if (name.includes("veggie") || name.includes("vegetable") || name.includes("tofu") || name.includes("vegan") || name.includes("vegetarian")) id = "photo-1512621776951-a57141f2eefd";
+  else if (name.includes("dessert") || name.includes("cake") || name.includes("pie") || name.includes("cookie") || name.includes("ice cream") || name.includes("sweet")) id = "photo-1587314168485-3236d6710814";
+  else if (name.includes("bread") || name.includes("toast") || name.includes("garlic bread")) id = "photo-1509440159596-0249088772ff";
+
+  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=250&h=250&q=80`;
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; cook?: string }> }) {
@@ -128,56 +130,69 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         {/* LEFT: Tonight's Dinner — HERO */}
         <div className="widget" style={{ padding: 0, overflow: 'hidden' }}>
           {todaysMeal && todaysMeal.name !== 'No meal scheduled' ? (
-            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span className="widget-badge" style={{ background: 'var(--accent-orange-glow)', color: 'var(--accent-orange)' }}>
-                  🍽️ TONIGHT'S DINNER
-                </span>
-                {todaysMeal.cook && (
-                  <span className="widget-badge" style={{ background: getCookBadge(todaysMeal.cook).bg, color: getCookBadge(todaysMeal.cook).color }}>
-                    <User size={10} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '3px' }}/> 
-                    {getCookBadge(todaysMeal.cook).label}
+            <div style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, height: '100%' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span className="widget-badge" style={{ background: 'var(--accent-orange-glow)', color: 'var(--accent-orange)' }}>
+                    🍽️ TONIGHT'S DINNER
                   </span>
-                )}
-              </div>
-              <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '2rem' }}>{getMealEmoji(todaysMeal.name)}</span>
-                {todaysMeal.name}
-              </h2>
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                <span className="dinner-meta-chip">
-                  <ClockIcon size={13} color="var(--accent-blue)"/> {todaysMeal.prepTime}
-                </span>
-                <span className="dinner-meta-chip">
-                  <Flame size={13} color="var(--accent-orange)"/> {todaysMeal.type}
-                </span>
-              </div>
-
-              {/* Tomorrow Preview */}
-              {tomorrowsMeal && tomorrowsMeal.name !== 'No meal scheduled' && (
-                <div style={{ 
-                  display: 'flex', alignItems: 'center', gap: '8px', 
-                  padding: '8px 12px', borderRadius: '10px',
-                  background: 'var(--bg-panel-hover)', 
-                  border: '1px solid var(--border-color)',
-                  marginTop: 'auto',
-                }}>
-                  <ArrowRight size={12} color="var(--text-tertiary)"/>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-                    Tomorrow:
+                  {todaysMeal.cook && (
+                    <span className="widget-badge" style={{ background: getCookBadge(todaysMeal.cook).bg, color: getCookBadge(todaysMeal.cook).color }}>
+                      <User size={10} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '3px' }}/> 
+                      {getCookBadge(todaysMeal.cook).label}
+                    </span>
+                  )}
+                </div>
+                <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>
+                  {todaysMeal.name}
+                </h2>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                  <span className="dinner-meta-chip">
+                    <ClockIcon size={13} color="var(--accent-blue)"/> {todaysMeal.prepTime}
                   </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                    {tomorrowsMeal.name}
-                  </span>
-                  <span className="widget-badge" style={{ 
-                    background: getCookBadge(tomorrowsMeal.cook).bg, 
-                    color: getCookBadge(tomorrowsMeal.cook).color,
-                    fontSize: '0.55rem', padding: '2px 6px',
-                  }}>
-                    {getCookBadge(tomorrowsMeal.cook).label}
+                  <span className="dinner-meta-chip">
+                    <Flame size={13} color="var(--accent-orange)"/> {todaysMeal.type}
                   </span>
                 </div>
-              )}
+
+                {/* Tomorrow Preview */}
+                {tomorrowsMeal && tomorrowsMeal.name !== 'No meal scheduled' && (
+                  <div style={{ 
+                    display: 'flex', alignItems: 'center', gap: '8px', 
+                    padding: '8px 12px', borderRadius: '10px',
+                    background: 'var(--bg-panel-hover)', 
+                    border: '1px solid var(--border-color)',
+                    marginTop: 'auto',
+                  }}>
+                    <ArrowRight size={12} color="var(--text-tertiary)"/>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                      Tomorrow:
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                      {tomorrowsMeal.name}
+                    </span>
+                    <span className="widget-badge" style={{ 
+                      background: getCookBadge(tomorrowsMeal.cook).bg, 
+                      color: getCookBadge(tomorrowsMeal.cook).color,
+                      fontSize: '0.55rem', padding: '2px 6px',
+                    }}>
+                      {getCookBadge(tomorrowsMeal.cook).label}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <img 
+                src={getMealImage(todaysMeal.name)} 
+                alt={todaysMeal.name} 
+                style={{ 
+                  width: '120px', 
+                  height: '120px', 
+                  borderRadius: '12px', 
+                  objectFit: 'cover', 
+                  border: '1px solid var(--border-color)',
+                  flexShrink: 0
+                }}
+              />
             </div>
           ) : (
             <div className="empty-state" style={{ minHeight: '200px' }}>
@@ -335,10 +350,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                       </span>
                     </div>
                     {day.meal && day.meal.name !== 'No meal scheduled' ? (
-                      <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>{getMealEmoji(day.meal.name)}</span>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {day.meal.name.length > 15 ? day.meal.name.slice(0, 13) + '…' : day.meal.name}
+                          {day.meal.name.length > 20 ? day.meal.name.slice(0, 18) + '…' : day.meal.name}
                         </span>
                       </div>
                     ) : (
@@ -369,22 +383,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                     <div className="meal-row-divider" style={{ backgroundColor: day.isToday ? 'var(--accent-blue)' : day.color }} />
                     
                     {day.meal && day.meal.name !== 'No meal scheduled' && (
-                      <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '8px',
-                        background: 'var(--bg-panel-hover)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1.4rem',
-                        border: '1px solid var(--border-color)',
-                        flexShrink: 0,
-                        marginLeft: '4px',
-                        marginRight: '2px'
-                      }}>
-                        {getMealEmoji(day.meal.name)}
-                      </div>
+                      <img 
+                        src={getMealImage(day.meal.name)} 
+                        alt={day.meal.name} 
+                        className="meal-row-image" 
+                      />
                     )}
 
                     <div className="meal-row-info">
