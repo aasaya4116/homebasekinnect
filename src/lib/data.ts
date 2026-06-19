@@ -177,16 +177,29 @@ export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> 
     items.forEach(event => {
       const isAllDay = !!event.start?.date;
       let timeStr = "All Day";
-      let dateStr = "";
+      let datesToPush: string[] = [];
 
-      if (isAllDay) {
-        dateStr = event.start?.date || "";
-      } else if (event.start?.dateTime) {
+      if (isAllDay && event.start?.date) {
+        datesToPush.push(event.start.date);
+        
+        if (event.end?.date) {
+          const startD = new Date(event.start.date);
+          const endD = new Date(event.end.date);
+          let currentD = new Date(startD);
+          currentD.setUTCDate(currentD.getUTCDate() + 1);
+          
+          while (currentD < endD) {
+            datesToPush.push(currentD.toISOString().split('T')[0]);
+            currentD.setUTCDate(currentD.getUTCDate() + 1);
+          }
+        }
+      } else if (!isAllDay && event.start?.dateTime) {
         const startDate = new Date(event.start.dateTime);
         timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        dateStr = startDate.getFullYear() + "-" + 
+        const dStr = startDate.getFullYear() + "-" + 
                  String(startDate.getMonth() + 1).padStart(2, '0') + "-" + 
                  String(startDate.getDate()).padStart(2, '0');
+        datesToPush.push(dStr);
       }
 
       // Parse person from title (e.g. "Mekhi: Golf" -> person="Mekhi", title="Golf")
@@ -199,14 +212,16 @@ export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> 
         title = match[2];
       }
 
-      events.push({
-        id: event.id || String(Math.random()),
-        time: timeStr,
-        title: title,
-        location: event.location || undefined,
-        color: isAllDay ? "#f59e0b" : "#10b981",
-        person: person,
-        date: dateStr,
+      datesToPush.forEach(dateStr => {
+        events.push({
+          id: event.id || String(Math.random()),
+          time: timeStr,
+          title: title,
+          location: event.location || undefined,
+          color: isAllDay ? "#f59e0b" : "#10b981",
+          person: person,
+          date: dateStr,
+        });
       });
     });
 
