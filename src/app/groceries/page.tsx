@@ -1,7 +1,7 @@
 import { getGroceryList } from "@/lib/data";
 import { ShoppingCart, Check, RefreshCw, Package } from "lucide-react";
 
-export const revalidate = 300;
+export const revalidate = 1800; // 30 minutes ISR caching
 
 export default async function Groceries() {
   const items = await getGroceryList();

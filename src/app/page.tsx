@@ -5,7 +5,7 @@ import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, Sho
 import Clock from "@/components/Clock";
 import Weather from "@/components/Weather";
 
-export const revalidate = 300; // 5 minutes ISR caching
+export const revalidate = 1800; // 30 minutes ISR caching
 
 const dayColors = [
   "#0ea5e9", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#ec4899", "#06b6d4",

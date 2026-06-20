@@ -1,6 +1,6 @@
 import { getFullDaySchedule } from "@/lib/data";
 
-export const revalidate = 300; // 5 minutes ISR caching
+export const revalidate = 1800; // 30 minutes ISR caching
 export default async function ByPerson() {
   const events = await getFullDaySchedule();
 
