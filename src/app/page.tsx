@@ -32,18 +32,16 @@ function getMealImage(index: number): string {
   return `${base}?auto=format&fit=crop&w=250&h=250&q=80`;
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ view?: string; cook?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ cook?: string }> }) {
   const params = await searchParams;
-  const view = params.view || "week";
   const cookFilter = params.cook || "all";
 
   const allMeals = await getWeeklyMeals();
   const schedule = await getTodaySchedule();
   const groceryItems = await getGroceryList();
 
-  // Build day array — 7 for week, 30 for month
-  const daysCount = view === "month" ? 30 : 7;
-  const monthlyEvents = view === "month" ? await getFullDaySchedule(30) : [];
+  const daysCount = 30;
+  const monthlyEvents = await getFullDaySchedule(30);
 
   const days = Array.from({ length: daysCount }).map((_, i) => {
     const d = new Date();
@@ -63,8 +61,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
       return mDate.getDate() === d.getDate() && mDate.getMonth() === d.getMonth() && mDate.getFullYear() === d.getFullYear();
     }) || null;
 
-    const dayEvents = monthlyEvents.filter(e => e.date === targetDateStr);
-
     return {
       index: i,
       dayNameShort, dayNum, monthShort, meal,
@@ -75,98 +71,89 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     };
   });
 
-  // Apply cook filter
   const filteredDays = cookFilter === "all" 
     ? days 
     : days.filter(d => d.cook.toLowerCase() === cookFilter.toLowerCase());
 
-  // Pre-calculate Weeks for Month View Grid
   const calendarWeeks: { days: any[], events: any[] }[] = [];
-  if (view === "month") {
-    const startPadding = new Date().getDay();
-    let currentWeekDays: any[] = [];
-    
-    for (let i = 0; i < startPadding; i++) currentWeekDays.push(null);
-    
-    days.forEach(day => {
-      const mappedDay = { ...day };
-      if (cookFilter !== "all" && mappedDay.cook.toLowerCase() !== cookFilter.toLowerCase()) {
-         mappedDay.meal = null;
-      }
-      currentWeekDays.push(mappedDay);
-      if (currentWeekDays.length === 7) {
-        calendarWeeks.push({ days: currentWeekDays, events: [] });
-        currentWeekDays = [];
-      }
-    });
-    
-    if (currentWeekDays.length > 0) {
-      while (currentWeekDays.length < 7) currentWeekDays.push(null);
+  const startPadding = new Date().getDay();
+  let currentWeekDays: any[] = [];
+  
+  for (let i = 0; i < startPadding; i++) currentWeekDays.push(null);
+  
+  days.forEach(day => {
+    currentWeekDays.push(day);
+    if (currentWeekDays.length === 7) {
       calendarWeeks.push({ days: currentWeekDays, events: [] });
+      currentWeekDays = [];
     }
-
-    calendarWeeks.forEach(week => {
-      const validDays = week.days.filter(d => d !== null);
-      if (validDays.length === 0) return;
-      
-      const weekStartStr = validDays[0].targetDateStr;
-      const weekEndStr = validDays[validDays.length - 1].targetDateStr;
-      const weekStartD = new Date(weekStartStr);
-      const weekEndD = new Date(weekEndStr);
-      
-      const overlappingEvents = monthlyEvents.filter(evt => {
-         if (!evt.date) return false;
-         const eStartD = new Date(evt.date);
-         const eEndD = evt.endDate ? new Date(evt.endDate) : new Date(evt.date);
-         return eStartD <= weekEndD && eEndD >= weekStartD;
-      });
-
-      let occupiedSlots: { [slot: number]: boolean[] } = {};
-      
-      week.events = overlappingEvents.map(evt => {
-        const eStartD = new Date(evt.date!);
-        const eEndD = evt.endDate ? new Date(evt.endDate) : new Date(evt.date!);
-        
-        let startCol = 1;
-        if (eStartD > weekStartD) {
-          const matchIdx = week.days.findIndex(d => d && d.targetDateStr === evt.date);
-          if (matchIdx !== -1) startCol = matchIdx + 1;
-        }
-
-        let endCol = 7;
-        if (eEndD < weekEndD) {
-          const eEndStr = eEndD.toISOString().split('T')[0];
-          const matchIdx = week.days.findIndex(d => d && d.targetDateStr === eEndStr);
-          if (matchIdx !== -1) endCol = matchIdx + 1;
-        }
-
-        const span = endCol - startCol + 1;
-
-        let slot = 0;
-        while (true) {
-          if (!occupiedSlots[slot]) occupiedSlots[slot] = Array(8).fill(false);
-          let canFit = true;
-          for (let c = startCol; c <= endCol; c++) {
-            if (occupiedSlots[slot][c]) canFit = false;
-          }
-          if (canFit) {
-            for (let c = startCol; c <= endCol; c++) occupiedSlots[slot][c] = true;
-            break;
-          }
-          slot++;
-        }
-
-        return { ...evt, startCol, span, slot };
-      });
-      
-      week.events.sort((a, b) => a.slot - b.slot);
-    });
+  });
+  
+  if (currentWeekDays.length > 0) {
+    while (currentWeekDays.length < 7) currentWeekDays.push(null);
+    calendarWeeks.push({ days: currentWeekDays, events: [] });
   }
+
+  calendarWeeks.forEach(week => {
+    const validDays = week.days.filter(d => d !== null);
+    if (validDays.length === 0) return;
+    
+    const weekStartStr = validDays[0].targetDateStr;
+    const weekEndStr = validDays[validDays.length - 1].targetDateStr;
+    const weekStartD = new Date(weekStartStr);
+    const weekEndD = new Date(weekEndStr);
+    
+    const overlappingEvents = monthlyEvents.filter(evt => {
+        if (!evt.date) return false;
+        const eStartD = new Date(evt.date);
+        const eEndD = evt.endDate ? new Date(evt.endDate) : new Date(evt.date);
+        return eStartD <= weekEndD && eEndD >= weekStartD;
+    });
+
+    let occupiedSlots: { [slot: number]: boolean[] } = {};
+    
+    week.events = overlappingEvents.map(evt => {
+      const eStartD = new Date(evt.date!);
+      const eEndD = evt.endDate ? new Date(evt.endDate) : new Date(evt.date!);
+      
+      let startCol = 1;
+      if (eStartD > weekStartD) {
+        const matchIdx = week.days.findIndex(d => d && d.targetDateStr === evt.date);
+        if (matchIdx !== -1) startCol = matchIdx + 1;
+      }
+
+      let endCol = 7;
+      if (eEndD < weekEndD) {
+        const eEndStr = eEndD.toISOString().split('T')[0];
+        const matchIdx = week.days.findIndex(d => d && d.targetDateStr === eEndStr);
+        if (matchIdx !== -1) endCol = matchIdx + 1;
+      }
+
+      const span = endCol - startCol + 1;
+
+      let slot = 0;
+      while (true) {
+        if (!occupiedSlots[slot]) occupiedSlots[slot] = Array(8).fill(false);
+        let canFit = true;
+        for (let c = startCol; c <= endCol; c++) {
+          if (occupiedSlots[slot][c]) canFit = false;
+        }
+        if (canFit) {
+          for (let c = startCol; c <= endCol; c++) occupiedSlots[slot][c] = true;
+          break;
+        }
+        slot++;
+      }
+
+      return { ...evt, startCol, span, slot };
+    });
+    
+    week.events.sort((a, b) => a.slot - b.slot);
+  });
 
   const todaysMeal = days[0].meal;
   const tomorrowsMeal = days.length > 1 ? days[1].meal : null;
 
-  // Grocery summary
   const toBuyCount = groceryItems.filter(i => i.status === "To Buy").length;
   const restockCount = groceryItems.filter(i => i.status === "Restock").length;
   const groceryCategories = [...new Set(groceryItems.map(i => i.category))];
@@ -182,11 +169,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', height: 'calc(100vh - 80px)' }}>
-
-      {/* ========================================
-          ROW 1: CLOCK BAR (slim)
-          ======================================== */}
+    <div className="dashboard-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <Clock />
@@ -200,12 +183,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         </form>
       </div>
 
-      {/* ========================================
-          ROW 2: HERO ROW — Dinner (60%) + Side Panels (40%)
-          ======================================== */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '0.75rem', flex: '0 0 auto' }}>
-
-        {/* LEFT: Tonight's Dinner — HERO */}
+      <div className="hero-row">
         <div className="widget" style={{ padding: 0, overflow: 'hidden' }}>
           {todaysMeal && todaysMeal.name !== 'No meal scheduled' ? (
             <div style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
@@ -232,8 +210,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
                     <Flame size={13} color="var(--accent-orange)"/> {todaysMeal.type}
                   </span>
                 </div>
-
-                {/* Tomorrow Preview */}
                 {tomorrowsMeal && tomorrowsMeal.name !== 'No meal scheduled' && (
                   <div style={{ 
                     display: 'flex', alignItems: 'center', gap: '8px', 
@@ -281,9 +257,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
           )}
         </div>
 
-        {/* RIGHT: Stacked side panels */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {/* Tonight's Schedule */}
           <div className="widget" style={{ flex: 1 }}>
             <div className="widget-header">
               <div className="widget-title">
@@ -311,7 +285,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
             )}
           </div>
 
-          {/* Grocery Summary */}
           <div className="widget" style={{ flex: 1 }}>
             <div className="widget-header">
               <div className="widget-title">
@@ -347,192 +320,150 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
         </div>
       </div>
 
-      {/* ========================================
-          ROW 3: WEEK AHEAD (fills remaining space)
-          ======================================== */}
-      <div className="widget" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        {/* Header with toggles */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: '0.75rem' }}>
+      <div className="widget" style={{ flex: '0 0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
           <div className="widget-title">
             <Zap size={13} color="var(--accent-green)"/>
-            {view === "month" ? "The Month Ahead" : "The Week Ahead"}
+            The Week Ahead
           </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {/* Cook Filter */}
-            <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-panel-hover)', borderRadius: '8px', padding: '2px' }}>
-              {[
-                { key: "all", label: "All" },
-                { key: "dad", label: "Dad", color: "#0ea5e9" },
-                { key: "mom", label: "Mom", color: "#ec4899" },
-              ].map(opt => (
-                <a key={opt.key} href={`/?view=${view}&cook=${opt.key}`} style={{
-                  fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', borderRadius: '6px',
-                  textDecoration: 'none',
-                  background: cookFilter === opt.key ? (opt.color || 'var(--accent-blue)') : 'transparent',
-                  color: cookFilter === opt.key ? '#fff' : 'var(--text-tertiary)',
-                  transition: 'all 0.2s',
-                }}>
-                  {opt.label}
-                </a>
-              ))}
-            </div>
-
-            {/* View Toggle */}
-            <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-panel-hover)', borderRadius: '8px', padding: '2px' }}>
-              <a href={`/?view=week&cook=${cookFilter}`} style={{
+          <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-panel-hover)', borderRadius: '8px', padding: '2px' }}>
+            {[
+              { key: "all", label: "All" },
+              { key: "dad", label: "Dad", color: "#0ea5e9" },
+              { key: "mom", label: "Mom", color: "#ec4899" },
+            ].map(opt => (
+              <a key={opt.key} href={`/?cook=${opt.key}`} style={{
                 fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', borderRadius: '6px',
                 textDecoration: 'none',
-                background: view === 'week' ? 'var(--accent-green)' : 'transparent',
-                color: view === 'week' ? '#fff' : 'var(--text-tertiary)',
-              }}>Week</a>
-              <a href={`/?view=month&cook=${cookFilter}`} style={{
-                fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', borderRadius: '6px',
-                textDecoration: 'none',
-                background: view === 'month' ? 'var(--accent-green)' : 'transparent',
-                color: view === 'month' ? '#fff' : 'var(--text-tertiary)',
-              }}>Month</a>
-            </div>
+                background: cookFilter === opt.key ? (opt.color || 'var(--accent-blue)') : 'transparent',
+                color: cookFilter === opt.key ? '#fff' : 'var(--text-tertiary)',
+                transition: 'all 0.2s',
+              }}>
+                {opt.label}
+              </a>
+            ))}
           </div>
         </div>
+        
+        <div>
+          {filteredDays.map((day, idx) => {
+            const badge = getCookBadge(day.cook);
+            return (
+              <div key={idx} className="meal-row" style={{ 
+                opacity: 1,
+                background: day.isToday ? 'var(--accent-blue-glow)' : 'transparent',
+                borderRadius: day.isToday ? 'var(--radius-sm)' : '0',
+                padding: day.isToday ? '0.85rem 0.75rem' : '0.85rem 0',
+                border: day.isToday ? '1px solid rgba(14, 165, 233, 0.3)' : 'none',
+                borderBottom: day.isToday ? '1px solid rgba(14, 165, 233, 0.3)' : '1px solid var(--border-subtle)',
+              }}>
+                <div className="meal-row-day">
+                  <div className="meal-row-day-name" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined }}>{day.dayNameShort}</div>
+                  <div className="meal-row-day-num" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined }}>{day.dayNum}</div>
+                </div>
+                <div className="meal-row-divider" style={{ backgroundColor: day.isToday ? 'var(--accent-blue)' : day.color }} />
+                
+                {day.meal && day.meal.name !== 'No meal scheduled' && (
+                  <img 
+                    src={getMealImage(day.index)} 
+                    alt={day.meal.name} 
+                    className="meal-row-image" 
+                  />
+                )}
 
-        {/* Content */}
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          {view === "month" ? (
-            /* ========= MONTH GRID VIEW ========= */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {/* Day headers */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-                  <div key={d} style={{ textAlign: 'center', fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-tertiary)', padding: '4px 0', letterSpacing: '0.05em' }}>
-                    {d}
-                  </div>
-                ))}
+                <div className="meal-row-info">
+                  {day.meal && day.meal.name !== 'No meal scheduled' ? (
+                    <>
+                      <div className="meal-row-name">{day.meal.name}</div>
+                      <div className="meal-row-meta"><ClockIcon size={11}/> {day.meal.prepTime}</div>
+                    </>
+                  ) : (
+                    <div className="meal-row-name" style={{ color: 'var(--text-tertiary)' }}>No meal scheduled</div>
+                  )}
+                </div>
+                <span style={{
+                  fontSize: '0.6rem', fontWeight: 700, padding: '3px 8px', borderRadius: '8px',
+                  background: badge.bg, color: badge.color, flexShrink: 0,
+                }}>
+                  {badge.label}
+                </span>
               </div>
-              
-              {/* Weeks */}
-              {calendarWeeks.map((week, wIdx) => {
-                 return (
-                   <div key={wIdx} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'min-content', gap: '4px', marginBottom: '4px' }}>
-                     {/* Backgrounds */}
-                     {week.days.map((day, dIdx) => {
-                       if (!day) return <div key={`pad-${dIdx}`} style={{ gridColumn: dIdx + 1, gridRow: '1 / span 10' }} />;
-                       
-                       const badge = getCookBadge(day.cook);
-                       return (
-                         <div key={`bg-${day.index}`} style={{
-                           gridColumn: dIdx + 1,
-                           gridRow: '1 / span 10',
-                           background: day.isToday ? 'var(--accent-blue-glow)' : 'var(--bg-panel-hover)',
-                           borderRadius: '8px', padding: '6px', minHeight: '85px',
-                           border: day.isToday ? '1.5px solid var(--accent-blue)' : '1px solid transparent',
-                           boxShadow: day.isToday ? '0 0 12px rgba(14, 165, 233, 0.2)' : 'none',
-                           display: 'flex', flexDirection: 'column'
-                         }}>
-                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)' }}>{day.dayNum}</span>
-                             <span style={{ fontSize: '0.5rem', fontWeight: 700, color: badge.color, background: badge.bg, padding: '1px 5px', borderRadius: '4px' }}>
-                               {badge.label}
-                             </span>
-                           </div>
-                           {day.meal && day.meal.name !== 'No meal scheduled' ? (
-                             <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: '4px' }}>
-                               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                 🍽️ {day.meal.name.length > 18 ? day.meal.name.slice(0, 16) + '…' : day.meal.name}
-                               </span>
-                             </div>
-                           ) : (
-                             <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>—</div>
-                           )}
-                           {/* Invisible spacer to reserve height for row 1 so events on row 2 don't overlap the header */}
-                           <div style={{ gridRow: 1, gridColumn: '1 / span 7', height: '40px' }} />
-                         </div>
-                       );
-                     })}
-
-                     {/* Invisible row 1 spacer across entire grid to ensure row 1 is exactly 40px */}
-                     <div style={{ gridRow: 1, gridColumn: '1 / span 7', height: '40px' }} />
-
-                     {/* Events */}
-                     {week.events.map((evt: any, eIdx: number) => (
-                       <div key={`evt-${eIdx}`} style={{ 
-                         gridColumn: `${evt.startCol} / span ${evt.span}`,
-                         gridRow: evt.slot + 2,
-                         zIndex: 10,
-                         margin: '0 2px 2px 2px',
-                         fontSize: '0.55rem', 
-                         color: '#fff', 
-                         background: evt.color || 'var(--accent-blue)',
-                         padding: '2px 6px',
-                         borderRadius: '4px',
-                         whiteSpace: 'nowrap',
-                         overflow: 'hidden',
-                         textOverflow: 'ellipsis',
-                         boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                         display: 'flex',
-                         alignItems: 'center'
-                       }}>
-                         {evt.time !== "All Day" && <span style={{ opacity: 0.8, marginRight: '4px', fontWeight: 600 }}>{evt.time.split(' ')[0]}</span>}
-                         {evt.title}
-                       </div>
-                     ))}
-                   </div>
-                 );
-              })}
-            </div>
-          ) : (
-            /* ========= WEEK LIST VIEW ========= */
-            <div>
-              {filteredDays.map((day, idx) => {
-                const badge = getCookBadge(day.cook);
-                return (
-                  <div key={idx} className="meal-row" style={{ 
-                    opacity: 1,
-                    background: day.isToday ? 'var(--accent-blue-glow)' : 'transparent',
-                    borderRadius: day.isToday ? 'var(--radius-sm)' : '0',
-                    padding: day.isToday ? '0.85rem 0.75rem' : '0.85rem 0',
-                    border: day.isToday ? '1px solid rgba(14, 165, 233, 0.3)' : 'none',
-                    borderBottom: day.isToday ? '1px solid rgba(14, 165, 233, 0.3)' : '1px solid var(--border-subtle)',
-                  }}>
-                    <div className="meal-row-day">
-                      <div className="meal-row-day-name" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined }}>{day.dayNameShort}</div>
-                      <div className="meal-row-day-num" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined }}>{day.dayNum}</div>
-                    </div>
-                    <div className="meal-row-divider" style={{ backgroundColor: day.isToday ? 'var(--accent-blue)' : day.color }} />
-                    
-                    {day.meal && day.meal.name !== 'No meal scheduled' && (
-                      <img 
-                        src={getMealImage(day.index)} 
-                        alt={day.meal.name} 
-                        className="meal-row-image" 
-                      />
-                    )}
-
-                    <div className="meal-row-info">
-                      {day.meal && day.meal.name !== 'No meal scheduled' ? (
-                        <>
-                          <div className="meal-row-name">{day.meal.name}</div>
-                          <div className="meal-row-meta"><ClockIcon size={11}/> {day.meal.prepTime}</div>
-                        </>
-                      ) : (
-                        <div className="meal-row-name" style={{ color: 'var(--text-tertiary)' }}>No meal scheduled</div>
-                      )}
-                    </div>
-                    {/* Cook Badge */}
-                    <span style={{
-                      fontSize: '0.6rem', fontWeight: 700, padding: '3px 8px', borderRadius: '8px',
-                      background: badge.bg, color: badge.color, flexShrink: 0,
-                    }}>
-                      {badge.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+            );
+          })}
         </div>
       </div>
 
+      <div className="widget" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div className="widget-title" style={{ flexShrink: 0, marginBottom: '0.75rem' }}>
+          <CalendarIcon size={13} color="var(--accent-blue)"/>
+          The Month Ahead
+        </div>
+
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+              {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+                <div key={d} style={{ textAlign: 'center', fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-tertiary)', padding: '4px 0', letterSpacing: '0.05em' }}>
+                  {d}
+                </div>
+              ))}
+            </div>
+            
+            {calendarWeeks.map((week, wIdx) => {
+               return (
+                 <div key={wIdx} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'min-content', gap: '4px', marginBottom: '4px' }}>
+                   {week.days.map((day, dIdx) => {
+                     if (!day) return <div key={`pad-${dIdx}`} style={{ gridColumn: dIdx + 1, gridRow: '1 / span 10' }} />;
+                     return (
+                       <div key={`bg-${day.index}`} style={{
+                         gridColumn: dIdx + 1,
+                         gridRow: '1 / span 10',
+                         background: 'var(--bg-panel-hover)',
+                         borderRadius: '8px',
+                         padding: '4px',
+                         border: day.isToday ? '1px solid var(--accent-blue)' : '1px solid var(--border-color)',
+                         display: 'flex', flexDirection: 'column'
+                       }}>
+                         <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', marginBottom: '2px' }}>
+                           <span style={{ fontSize: '0.7rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                             {day.dayNum}
+                           </span>
+                         </div>
+                         <div style={{ gridRow: 1, gridColumn: '1 / span 7', height: '40px' }} />
+                       </div>
+                     );
+                   })}
+
+                   <div style={{ gridRow: 1, gridColumn: '1 / span 7', height: '40px' }} />
+
+                   {week.events.map((evt: any, eIdx: number) => (
+                     <div key={`evt-${eIdx}`} style={{ 
+                       gridColumn: `${evt.startCol} / span ${evt.span}`,
+                       gridRow: evt.slot + 2,
+                       zIndex: 10,
+                       margin: '0 2px 2px 2px',
+                       fontSize: '0.55rem', 
+                       color: '#fff', 
+                       background: evt.color || 'var(--accent-blue)',
+                       padding: '2px 6px',
+                       borderRadius: '4px',
+                       whiteSpace: 'nowrap',
+                       overflow: 'hidden',
+                       textOverflow: 'ellipsis',
+                       boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                       display: 'flex',
+                       alignItems: 'center'
+                     }}>
+                       {evt.time !== "All Day" && <span style={{ opacity: 0.8, marginRight: '4px', fontWeight: 600 }}>{evt.time.split(' ')[0]}</span>}
+                       {evt.title}
+                     </div>
+                   ))}
+                 </div>
+               );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
