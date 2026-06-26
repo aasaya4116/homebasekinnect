@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -8,8 +8,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Kinnect HomeBase",
+  title: "ASAYA Homebase KINnect",
   description: "Smart Family Meal Planner and Dashboard",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 import Navigation from "@/components/Navigation";

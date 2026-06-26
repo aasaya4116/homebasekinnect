@@ -40,7 +40,7 @@ const auth = getGoogleAuth([
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || '';
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || '';
 
-export async function getRawInventory(): Promise<Meal[]> {
+export async function getRawInventory(type?: string): Promise<Meal[]> {
   try {
     const sheets = google.sheets({ version: 'v4', auth });
     const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
@@ -53,12 +53,14 @@ export async function getRawInventory(): Promise<Meal[]> {
 
     const rows = res.data.values || [];
     const dataRows = rows.slice(2);
-    const dinners = dataRows.filter(row => row[0]?.toLowerCase() === 'dinner');
+    const filtered = type 
+      ? dataRows.filter(row => row[0]?.toLowerCase() === type.toLowerCase())
+      : dataRows.filter(row => ['dinner', 'lunch', 'breakfast'].includes(row[0]?.toLowerCase()));
     
-    return dinners.map((row, idx) => ({
+    return filtered.map((row, idx) => ({
       id: String(idx),
       name: row[1] || "Eat Out",
-      type: "Dinner",
+      type: row[0] || "Dinner",
       prepTime: row[4] || "N/A",
       ingredients: row[5] || ""
     }));

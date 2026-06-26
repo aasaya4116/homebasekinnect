@@ -8,13 +8,14 @@ export default function Navigation() {
 
   const navItems = [
     { name: "Dashboard", path: "/" },
+    { name: "Monthly", path: "/monthly" },
     { name: "By Person", path: "/byperson" },
     { name: "Groceries", path: "/groceries" },
   ];
 
   return (
     <nav className="wall-nav">
-      <div className="wall-nav-brand">Kinnect HomeBase</div>
+      <div className="wall-nav-brand">ASAYA Homebase KINnect</div>
       <div className="wall-nav-links">
         {navItems.map((item) => (
           <Link

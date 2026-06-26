@@ -458,4 +458,116 @@ p {
   .week-meals-grid {
     grid-template-columns: 1fr;
   }
+
+/* ========================================
+   TOUCHSCREEN ENHANCEMENTS
+   ======================================== */
+
+/* Prevent tap highlight flash on touch */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent accidental text selection on non-text elements */
+nav, button, .widget-badge, .btn-primary, .wall-nav-link, .meal-row, .event-row {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent double-tap zoom on interactive elements */
+button, a, .btn-primary, .wall-nav-link, .meal-row {
+  touch-action: manipulation;
+}
+
+/* Minimum 44px tap targets (Apple HIG standard) */
+.wall-nav-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+}
+
+.btn-primary {
+  min-height: 44px;
+}
+
+/* Active state feedback for taps */
+.btn-primary:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.wall-nav-link:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.meal-row:active {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* ========================================
+   MEAL TYPE BADGES (Lunch / Dinner labels)
+   ======================================== */
+
+.meal-type-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.meal-type-badge.lunch {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.meal-type-badge.dinner {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+/* ========================================
+   DAY GROUP (Stacked Lunch + Dinner)
+   ======================================== */
+
+.day-group {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.day-group:last-child {
+  border-bottom: none;
+}
+
+.day-group-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.day-group-meals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-left: 52px;
+}
+
+.day-meal-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.day-meal-row:active {
+  background: rgba(255, 255, 255, 0.04);
+}
 }

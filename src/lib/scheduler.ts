@@ -27,7 +27,8 @@ function getCookForDay(dayOfWeek: number): string {
 export async function generateSchedule(daysOut: number = 30) {
   try {
     // 1. Fetch the raw inventory directly
-    const inventory = await getRawInventory();
+    const inventory = await getRawInventory('Dinner');
+    const lunchInventory = await getRawInventory('Lunch');
     
     // Filter out "Eat Out" from the cooking pool
     const cookableMeals = inventory.filter(m => m.name.toLowerCase() !== 'eat out');
@@ -269,13 +270,62 @@ export async function generateSchedule(daysOut: number = 30) {
       });
     }
 
-    console.log(`Scheduled ${schedule.length} days. Used ${usedMeals.size}/${cookableMeals.length} unique meals.`);
+    console.log(`Scheduled ${schedule.length} dinners. Used ${usedMeals.size}/${cookableMeals.length} unique dinner meals.`);
+
+    // ============================================================
+    // LUNCH SCHEDULING — Simple rotation through lunch inventory
+    // ============================================================
+    const lunchSchedule: Meal[] = [];
+    const cookableLunches = lunchInventory.filter(m => m.name.toLowerCase() !== 'eat out');
+    const shuffledLunches = [...cookableLunches];
+    shuffle(shuffledLunches);
+    let lunchIdx = 0;
+
+    for (let i = 0; i < daysOut; i++) {
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + i);
+      const dateStr = targetDate.toISOString().split('T')[0];
+      const dayOfWeek = targetDate.getDay();
+      const cook = getCookForDay(dayOfWeek);
+
+      // Check if lunch already exists in existing schedule
+      const existingLunch = existingSchedule.find(m => {
+        if (!m.date || m.type?.toLowerCase() !== 'lunch') return false;
+        const normalizedDate = m.date.replace(/-/g, '/');
+        const mDate = new Date(normalizedDate);
+        return mDate.getDate() === targetDate.getDate() && mDate.getMonth() === targetDate.getMonth();
+      });
+
+      if (existingLunch) {
+        lunchSchedule.push(existingLunch);
+        continue;
+      }
+
+      if (shuffledLunches.length > 0) {
+        const selectedLunch = shuffledLunches[lunchIdx % shuffledLunches.length];
+        lunchIdx++;
+        lunchSchedule.push({
+          id: String(daysOut + i),
+          date: dateStr,
+          name: selectedLunch.name,
+          type: "Lunch",
+          prepTime: selectedLunch.prepTime,
+          ingredients: selectedLunch.ingredients || "",
+          cook: cook
+        });
+      }
+    }
+
+    console.log(`Scheduled ${lunchSchedule.length} lunches.`);
+
+    // Combine dinner + lunch schedules
+    const fullSchedule = [...schedule, ...lunchSchedule];
 
     // 6. Write back to Google Sheets
-    await writeScheduleToSheet(schedule);
-    await writeGroceryListToSheet(schedule);
+    await writeScheduleToSheet(fullSchedule);
+    await writeGroceryListToSheet(fullSchedule);
 
-    return schedule;
+    return fullSchedule;
   } catch (error) {
     console.error("Scheduler Error:", error);
     throw error;
@@ -312,7 +362,7 @@ async function writeScheduleToSheet(schedule: Meal[]) {
     // 3. Clear existing schedule and rewrite
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: `'${tabName}'!A1:F100`
+      range: `'${tabName}'!A1:F500`
     });
 
     await sheets.spreadsheets.values.update({
