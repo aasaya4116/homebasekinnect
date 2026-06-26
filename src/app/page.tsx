@@ -308,45 +308,63 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   </div>
                 </div>
                 
-                <div className="day-group-meals">
-                  {/* Lunch Row */}
-                  {day.lunch && (
-                    <div className="day-meal-row">
-                      <span className="meal-type-badge lunch">🥗 LUNCH</span>
-                      <div className="meal-row-info">
-                        <div className="meal-row-name" style={{ fontSize: '0.85rem' }}>{day.lunch.name}</div>
-                        <div className="meal-row-meta"><ClockIcon size={10}/> {day.lunch.prepTime}</div>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div className="day-group-meals" style={{ flex: 1 }}>
+                    {/* Lunch Row */}
+                    {day.lunch && (
+                      <div className="day-meal-row">
+                        <span className="meal-type-badge lunch">🥗 LUNCH</span>
+                        <div className="meal-row-info">
+                          <div className="meal-row-name" style={{ fontSize: '0.85rem' }}>{day.lunch.name}</div>
+                          <div className="meal-row-meta"><ClockIcon size={10}/> {day.lunch.prepTime}</div>
+                        </div>
+                        <span style={{
+                          fontSize: '0.55rem', fontWeight: 700, padding: '2px 6px', borderRadius: '6px',
+                          background: getCookBadge(day.lunch.cook || 'Both').bg, color: getCookBadge(day.lunch.cook || 'Both').color, flexShrink: 0,
+                        }}>
+                          {getCookBadge(day.lunch.cook || 'Both').label}
+                        </span>
                       </div>
-                      <span style={{
-                        fontSize: '0.55rem', fontWeight: 700, padding: '2px 6px', borderRadius: '6px',
-                        background: getCookBadge(day.lunch.cook || 'Both').bg, color: getCookBadge(day.lunch.cook || 'Both').color, flexShrink: 0,
-                      }}>
-                        {getCookBadge(day.lunch.cook || 'Both').label}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {/* Dinner Row */}
-                  {day.dinner && (
-                    <div className="day-meal-row">
-                      <span className="meal-type-badge dinner">🍽️ DINNER</span>
-                      <div className="meal-row-info">
-                        <div className="meal-row-name" style={{ fontSize: '0.85rem' }}>{day.dinner.name}</div>
-                        <div className="meal-row-meta"><ClockIcon size={10}/> {day.dinner.prepTime}</div>
+                    )}
+                    
+                    {/* Dinner Row */}
+                    {day.dinner && (
+                      <div className="day-meal-row">
+                        <span className="meal-type-badge dinner">🍽️ DINNER</span>
+                        <div className="meal-row-info">
+                          <div className="meal-row-name" style={{ fontSize: '0.85rem' }}>{day.dinner.name}</div>
+                          <div className="meal-row-meta"><ClockIcon size={10}/> {day.dinner.prepTime}</div>
+                        </div>
+                        <span style={{
+                          fontSize: '0.55rem', fontWeight: 700, padding: '2px 6px', borderRadius: '6px',
+                          background: getCookBadge(day.dinner.cook || 'Both').bg, color: getCookBadge(day.dinner.cook || 'Both').color, flexShrink: 0,
+                        }}>
+                          {getCookBadge(day.dinner.cook || 'Both').label}
+                        </span>
                       </div>
-                      <span style={{
-                        fontSize: '0.55rem', fontWeight: 700, padding: '2px 6px', borderRadius: '6px',
-                        background: getCookBadge(day.dinner.cook || 'Both').bg, color: getCookBadge(day.dinner.cook || 'Both').color, flexShrink: 0,
-                      }}>
-                        {getCookBadge(day.dinner.cook || 'Both').label}
-                      </span>
-                    </div>
-                  )}
+                    )}
 
-                  {!day.lunch && !day.dinner && (
-                    <div className="day-meal-row">
-                       <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No meals scheduled</span>
-                    </div>
+                    {!day.lunch && !day.dinner && (
+                      <div className="day-meal-row">
+                         <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No meals scheduled</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Food Image Thumbnail */}
+                  {day.dinner && day.dinner.name !== 'No meal scheduled' && (
+                    <img 
+                      src={getMealImage(idx)} 
+                      alt={day.dinner.name} 
+                      style={{ 
+                        width: '56px', 
+                        height: '56px', 
+                        borderRadius: '8px', 
+                        objectFit: 'cover', 
+                        border: '1px solid var(--border-color)',
+                        flexShrink: 0
+                      }}
+                    />
                   )}
                 </div>
               </div>
