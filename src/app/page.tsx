@@ -301,32 +301,32 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         
         <div className="week-meals-grid" style={{ minHeight: 0 }}>
           {filteredDays.map((day, idx) => (
-            <div key={idx} className="day-card" style={{ padding: '0.75rem', overflow: 'hidden' }}>
-              <div className="day-card-header" style={{ marginBottom: '0.5rem', paddingBottom: '0.5rem' }}>
+            <div key={idx} className="day-card" style={{ padding: '0.65rem', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div className="day-card-header" style={{ marginBottom: '0.4rem', paddingBottom: '0.4rem', flexShrink: 0 }}>
                 <div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {day.dayNameShort}
                   </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 300, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)', lineHeight: 1 }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 300, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)', lineHeight: 1 }}>
                     {day.dayNum}
                   </div>
                 </div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: day.isToday ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: day.isToday ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                   {day.isToday ? 'Today' : day.monthShort}
                 </div>
               </div>
               
-              <div className="day-card-meals" style={{ gap: '0.5rem' }}>
+              <div className="day-card-meals" style={{ gap: '0.4rem', flex: '1 1 auto', minHeight: 0, justifyContent: 'space-around' }}>
                 {day.lunch ? (
-                  <div className="day-meal-block" style={{ padding: '0.5rem' }}>
+                  <div className="day-meal-block" style={{ padding: '0.4rem', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="meal-type-badge lunch" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>🥗 LUNCH</span>
+                      <span className="meal-type-badge lunch" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>🥗 LUNCH</span>
                       <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
                     </div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.lunch.name}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{day.lunch.name}</div>
                     {day.lunch.cook && (
                       <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', width: 'fit-content',
+                        fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', width: 'fit-content',
                         background: getCookBadge(day.lunch.cook).bg, color: getCookBadge(day.lunch.cook).color
                       }}>
                         {getCookBadge(day.lunch.cook).label}
@@ -334,21 +334,21 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     )}
                   </div>
                 ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.5rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Lunch</span>
+                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.4rem', flexShrink: 0 }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>No Lunch</span>
                   </div>
                 )}
                 
                 {day.dinner ? (
-                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)', padding: '0.5rem' }}>
+                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)', padding: '0.4rem', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="meal-type-badge dinner" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>🍽️ DINNER</span>
+                      <span className="meal-type-badge dinner" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>🍽️ DINNER</span>
                       <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
                     </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.dinner.name}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{day.dinner.name}</div>
                     {day.dinner.cook && (
                       <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', width: 'fit-content',
+                        fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', width: 'fit-content',
                         background: getCookBadge(day.dinner.cook).bg, color: getCookBadge(day.dinner.cook).color
                       }}>
                         {getCookBadge(day.dinner.cook).label}
@@ -356,21 +356,21 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     )}
                   </div>
                 ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.5rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Dinner</span>
+                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.4rem', flexShrink: 0 }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>No Dinner</span>
                   </div>
                 )}
               </div>
 
               {day.dinner && day.dinner.name !== 'No meal scheduled' && (
-                <div style={{ marginTop: '0.5rem', height: '70px', flexShrink: 0 }}>
+                <div style={{ marginTop: '0.4rem', flex: '0 1 55px', minHeight: '35px', maxHeight: '55px', flexShrink: 1, overflow: 'hidden' }}>
                   <img 
                     src={getMealImage(idx)} 
                     alt={day.dinner.name} 
                     style={{ 
                       width: '100%', 
                       height: '100%', 
-                      borderRadius: '8px', 
+                      borderRadius: '6px', 
                       objectFit: 'cover', 
                       border: '1px solid var(--border-color)',
                     }}
