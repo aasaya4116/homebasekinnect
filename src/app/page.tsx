@@ -29,7 +29,7 @@ const curatedFoodImages = [
 
 function getMealImage(index: number): string {
   const base = curatedFoodImages[index % curatedFoodImages.length];
-  return `${base}?auto=format&fit=crop&w=250&h=250&q=80`;
+  return `${base}?auto=format&fit=crop&w=400&h=300&q=80`;
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ cook?: string }> }) {
@@ -100,7 +100,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   return (
     <div className="dashboard-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <Clock />
           <Weather />
@@ -113,7 +113,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         </form>
       </div>
 
+      {/* TOP SECTION: Hero + Quick Info (Grid) */}
       <div className="hero-row">
+        {/* HERO WIDGET (2.5fr) */}
         <div className="widget" style={{ padding: 0, overflow: 'hidden' }}>
           {todaysDinner && todaysDinner.name !== 'No meal scheduled' ? (
             <div style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
@@ -129,7 +131,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     </span>
                   )}
                 </div>
-                <h2 style={{ fontSize: '2.2rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>
+                <h2 style={{ fontSize: '2.4rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>
                   {todaysDinner.name}
                 </h2>
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
@@ -166,8 +168,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                 src={getMealImage(0)} 
                 alt={todaysDinner.name} 
                 style={{ 
-                  width: '200px', 
-                  height: '200px', 
+                  width: '260px', 
+                  height: '100%', 
                   borderRadius: '16px', 
                   objectFit: 'cover', 
                   border: '1px solid var(--border-color)',
@@ -176,100 +178,104 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               />
             </div>
           ) : (
-            <div className="empty-state" style={{ minHeight: '200px' }}>
+            <div className="empty-state" style={{ height: '100%' }}>
               <Utensils size={40} />
-              <span style={{ fontSize: '1rem', fontWeight: 600 }}>No Dinner Scheduled</span>
-              <span style={{ fontSize: '0.75rem' }}>Click Regenerate to generate your month</span>
+              <span style={{ fontSize: '1.2rem', fontWeight: 600 }}>No Dinner Scheduled</span>
+              <span style={{ fontSize: '0.85rem' }}>Click Regenerate to generate your month</span>
             </div>
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div className="widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-             <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
-              <div className="widget-title">
-                <Utensils size={15} color="var(--accent-green)"/>
-                Today's Lunch
-              </div>
+        {/* LUNCH WIDGET (1fr) */}
+        <div className="widget" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="widget-header" style={{ marginBottom: '1rem' }}>
+            <div className="widget-title">
+              <Utensils size={15} color="var(--accent-green)"/>
+              Today's Lunch
             </div>
-            {todaysLunch ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <span className="meal-type-badge lunch" style={{ fontSize: '0.75rem' }}>🥗 LUNCH</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{todaysLunch.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}><ClockIcon size={12} style={{ display: 'inline', marginRight: '4px' }}/>{todaysLunch.prepTime}</div>
-                </div>
+          </div>
+          {todaysLunch ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, justifyContent: 'center' }}>
+              <span className="meal-type-badge lunch" style={{ fontSize: '0.75rem', width: 'fit-content' }}>🥗 LUNCH</span>
+              <div style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{todaysLunch.name}</div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: 'auto' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}><ClockIcon size={14} style={{ display: 'inline', marginRight: '4px' }}/>{todaysLunch.prepTime}</span>
                 {todaysLunch.cook && (
                    <span style={{
                     fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px',
-                    background: getCookBadge(todaysLunch.cook).bg, color: getCookBadge(todaysLunch.cook).color, flexShrink: 0,
+                    background: getCookBadge(todaysLunch.cook).bg, color: getCookBadge(todaysLunch.cook).color
                   }}>
                     {getCookBadge(todaysLunch.cook).label}
                   </span>
                 )}
               </div>
-            ) : (
-              <div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>No lunch scheduled today</div>
-            )}
-          </div>
-
-          <div className="widget" style={{ flex: 1 }}>
-            <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
-              <div className="widget-title">
-                <CalendarIcon size={15} color="var(--accent-blue)"/>
-                Tonight's Schedule
-              </div>
-              <span className="widget-badge" style={{ background: 'var(--accent-blue-glow)', color: 'var(--accent-blue)', fontSize: '0.75rem' }}>
-                {schedule.length} Event{schedule.length !== 1 ? 's' : ''}
-              </span>
             </div>
-            {schedule.length > 0 ? (
-              <div>
-                {schedule.slice(0, 2).map((event, i) => (
-                  <div key={i} className="event-row" style={{ padding: '0.5rem 0' }}>
-                    <div className="event-dot" style={{ backgroundColor: event.color, boxShadow: `0 0 8px ${event.color}40`, height: '24px' }} />
-                    <div>
-                      <div className="event-title" style={{ fontSize: '0.95rem' }}>{event.title}</div>
-                      <div className="event-time" style={{ fontSize: '0.8rem' }}><ClockIcon size={12}/> {event.time}</div>
-                    </div>
+          ) : (
+            <div className="empty-state" style={{ height: '100%' }}>No lunch scheduled today</div>
+          )}
+        </div>
+
+        {/* SCHEDULE WIDGET (1fr) */}
+        <div className="widget" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="widget-header" style={{ marginBottom: '1rem' }}>
+            <div className="widget-title">
+              <CalendarIcon size={15} color="var(--accent-blue)"/>
+              Tonight's Schedule
+            </div>
+            <span className="widget-badge" style={{ background: 'var(--accent-blue-glow)', color: 'var(--accent-blue)' }}>
+              {schedule.length} Event{schedule.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          {schedule.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+              {schedule.slice(0, 3).map((event, i) => (
+                <div key={i} className="event-row" style={{ padding: '0.5rem 0' }}>
+                  <div className="event-dot" style={{ backgroundColor: event.color, boxShadow: `0 0 8px ${event.color}40`, height: '24px' }} />
+                  <div>
+                    <div className="event-title" style={{ fontSize: '1rem' }}>{event.title}</div>
+                    <div className="event-time" style={{ fontSize: '0.85rem' }}><ClockIcon size={12}/> {event.time}</div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>No evening events tonight</div>
-            )}
-          </div>
-
-          <div className="widget" style={{ flex: 1 }}>
-            <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
-              <div className="widget-title">
-                <ShoppingCart size={15} color="var(--accent-green)"/>
-                Grocery List
-              </div>
-              <span className="widget-badge" style={{ background: 'var(--accent-green-glow)', color: 'var(--accent-green)', fontSize: '0.75rem' }}>
-                {toBuyCount + restockCount} Items
-              </span>
-            </div>
-            {groceryItems.length > 0 ? (
-              <div>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                  <span style={{ fontSize: '0.9rem', color: 'var(--accent-blue)', fontWeight: 600 }}>{toBuyCount} to buy</span>
-                  {restockCount > 0 && (
-                    <span style={{ fontSize: '0.9rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <RefreshCw size={14}/> {restockCount} restock
-                    </span>
-                  )}
                 </div>
-              </div>
-            ) : (
-              <div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>Schedule meals to generate your list</div>
-            )}
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state" style={{ height: '100%' }}>No evening events tonight</div>
+          )}
+        </div>
+
+        {/* GROCERY WIDGET (1fr) */}
+        <div className="widget" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="widget-header" style={{ marginBottom: '1rem' }}>
+            <div className="widget-title">
+              <ShoppingCart size={15} color="var(--accent-green)"/>
+              Grocery List
+            </div>
+            <span className="widget-badge" style={{ background: 'var(--accent-green-glow)', color: 'var(--accent-green)' }}>
+              {toBuyCount + restockCount} Items
+            </span>
           </div>
+          {groceryItems.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ fontSize: '2.5rem', color: 'var(--accent-blue)', fontWeight: 700, lineHeight: 1 }}>
+                {toBuyCount}
+              </div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>To Buy</div>
+              
+              {restockCount > 0 && (
+                <div style={{ fontSize: '1rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1rem' }}>
+                  <RefreshCw size={16}/> {restockCount} Restock Items
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="empty-state" style={{ height: '100%' }}>Schedule meals to generate list</div>
+          )}
         </div>
       </div>
 
-      <div className="widget" style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      {/* BOTTOM SECTION: 7-Day Grid */}
+      <div className="widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div className="widget-title" style={{ fontSize: '1rem' }}>
             <Zap size={18} color="var(--accent-green)"/>
             The Week Ahead
@@ -293,83 +299,86 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           </div>
         </div>
         
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-          {filteredDays.map((day, idx) => {
-            return (
-              <div key={idx} className="day-group">
-                <div className="day-group-header">
-                  <div className="meal-row-day" style={{ width: '56px' }}>
-                    <div className="meal-row-day-name" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined, fontSize: '0.95rem' }}>{day.dayNameShort}</div>
-                    <div className="meal-row-day-num" style={{ color: day.isToday ? 'var(--accent-blue)' : undefined, fontSize: '1.8rem' }}>{day.dayNum}</div>
+        <div className="week-meals-grid">
+          {filteredDays.map((day, idx) => (
+            <div key={idx} className="day-card" style={{ padding: '1rem' }}>
+              <div className="day-card-header">
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {day.dayNameShort}
                   </div>
-                  <div className="meal-row-divider" style={{ backgroundColor: day.isToday ? 'var(--accent-blue)' : day.color, height: '48px', width: '4px' }} />
-                  <div style={{ fontSize: '1.1rem', fontWeight: 600, color: day.isToday ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                    {day.isToday ? 'Today' : `${day.monthShort} ${day.dayNum}`}
+                  <div style={{ fontSize: '2rem', fontWeight: 300, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)', lineHeight: 1 }}>
+                    {day.dayNum}
                   </div>
                 </div>
-                
-                <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
-                  <div className="day-group-meals" style={{ flex: 1, paddingLeft: '76px' }}>
-                    {/* Lunch Row */}
-                    {day.lunch && (
-                      <div className="day-meal-row">
-                        <span className="meal-type-badge lunch">🥗 LUNCH</span>
-                        <div className="meal-row-info">
-                          <div className="meal-row-name" style={{ fontSize: '1.1rem' }}>{day.lunch.name}</div>
-                          <div className="meal-row-meta" style={{ fontSize: '0.85rem' }}><ClockIcon size={12}/> {day.lunch.prepTime}</div>
-                        </div>
-                        <span style={{
-                          fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px',
-                          background: getCookBadge(day.lunch.cook || 'Both').bg, color: getCookBadge(day.lunch.cook || 'Both').color, flexShrink: 0,
-                        }}>
-                          {getCookBadge(day.lunch.cook || 'Both').label}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Dinner Row */}
-                    {day.dinner && (
-                      <div className="day-meal-row">
-                        <span className="meal-type-badge dinner">🍽️ DINNER</span>
-                        <div className="meal-row-info">
-                          <div className="meal-row-name" style={{ fontSize: '1.1rem' }}>{day.dinner.name}</div>
-                          <div className="meal-row-meta" style={{ fontSize: '0.85rem' }}><ClockIcon size={12}/> {day.dinner.prepTime}</div>
-                        </div>
-                        <span style={{
-                          fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px',
-                          background: getCookBadge(day.dinner.cook || 'Both').bg, color: getCookBadge(day.dinner.cook || 'Both').color, flexShrink: 0,
-                        }}>
-                          {getCookBadge(day.dinner.cook || 'Both').label}
-                        </span>
-                      </div>
-                    )}
-
-                    {!day.lunch && !day.dinner && (
-                      <div className="day-meal-row">
-                         <span style={{ fontSize: '1rem', color: 'var(--text-tertiary)' }}>No meals scheduled</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Food Image Thumbnail */}
-                  {day.dinner && day.dinner.name !== 'No meal scheduled' && (
-                    <img 
-                      src={getMealImage(idx)} 
-                      alt={day.dinner.name} 
-                      style={{ 
-                        width: '100px', 
-                        height: '100px', 
-                        borderRadius: '12px', 
-                        objectFit: 'cover', 
-                        border: '1px solid var(--border-color)',
-                        flexShrink: 0
-                      }}
-                    />
-                  )}
+                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: day.isToday ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                  {day.isToday ? 'Today' : day.monthShort}
                 </div>
               </div>
-            );
-          })}
+              
+              <div className="day-card-meals">
+                {day.lunch ? (
+                  <div className="day-meal-block">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="meal-type-badge lunch" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>🥗 LUNCH</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
+                    </div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.lunch.name}</div>
+                    {day.lunch.cook && (
+                      <span style={{
+                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', width: 'fit-content',
+                        background: getCookBadge(day.lunch.cook).bg, color: getCookBadge(day.lunch.cook).color
+                      }}>
+                        {getCookBadge(day.lunch.cook).label}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5 }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>No Lunch</span>
+                  </div>
+                )}
+                
+                {day.dinner ? (
+                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="meal-type-badge dinner" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>🍽️ DINNER</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.dinner.name}</div>
+                    {day.dinner.cook && (
+                      <span style={{
+                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', width: 'fit-content',
+                        background: getCookBadge(day.dinner.cook).bg, color: getCookBadge(day.dinner.cook).color
+                      }}>
+                        {getCookBadge(day.dinner.cook).label}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5 }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>No Dinner</span>
+                  </div>
+                )}
+              </div>
+
+              {day.dinner && day.dinner.name !== 'No meal scheduled' && (
+                <div style={{ marginTop: '0.75rem', height: '90px' }}>
+                  <img 
+                    src={getMealImage(idx)} 
+                    alt={day.dinner.name} 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      borderRadius: '8px', 
+                      objectFit: 'cover', 
+                      border: '1px solid var(--border-color)',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

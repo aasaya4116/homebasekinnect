@@ -427,37 +427,32 @@ p {
   gap: 0.5rem;
 }
 /* ========================================
-   RESPONSIVE LAYOUT (Unified Dashboard)
+   RESPONSIVE LAYOUT (Landscape Dashboard)
    ======================================== */
 
 .dashboard-container {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  min-height: calc(100vh - 80px);
+  gap: 1.25rem;
+  height: 100vh;
+  padding: 1.25rem;
+  overflow: hidden; /* Lock viewport for kiosk */
 }
 
 .hero-row {
   display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 0.75rem;
+  grid-template-columns: 2.5fr 1fr 1fr 1fr;
+  gap: 1.25rem;
+  height: 38vh; /* Fixed height for top section */
   flex: 0 0 auto;
 }
 
 .week-meals-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.75rem;
-}
-
-@media (max-width: 1000px) {
-  .hero-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .week-meals-grid {
-    grid-template-columns: 1fr;
-  }
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ========================================
@@ -504,10 +499,6 @@ button, a, .btn-primary, .wall-nav-link, .meal-row {
   opacity: 0.8;
 }
 
-.meal-row:active {
-  background: rgba(255, 255, 255, 0.04) !important;
-}
-
 /* ========================================
    MEAL TYPE BADGES (Lunch / Dinner labels)
    ======================================== */
@@ -533,43 +524,45 @@ button, a, .btn-primary, .wall-nav-link, .meal-row {
 }
 
 /* ========================================
-   DAY GROUP (Stacked Lunch + Dinner)
+   DAY CARD (Landscape Grid Layout)
    ======================================== */
 
-.day-group {
-  padding: 1.5rem 0;
+.day-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.day-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.day-group:last-child {
-  border-bottom: none;
-}
-
-.day-group-header {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  margin-bottom: 0.75rem;
-}
-
-.day-group-meals {
+.day-card-meals {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding-left: 64px;
+  flex: 1;
 }
 
-.day-meal-row {
+.day-meal-block {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  transition: background 0.2s ease;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
   background: var(--bg-panel-hover);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
 }
 
-.day-meal-row:active {
+.day-meal-block:active {
   background: rgba(255, 255, 255, 0.04);
 }
