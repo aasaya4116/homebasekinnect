@@ -274,8 +274,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       </div>
 
       {/* BOTTOM SECTION: 7-Day Grid */}
-      <div className="widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div className="widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem', minHeight: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0 }}>
           <div className="widget-title" style={{ fontSize: '1rem' }}>
             <Zap size={18} color="var(--accent-green)"/>
             The Week Ahead
@@ -299,31 +299,31 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           </div>
         </div>
         
-        <div className="week-meals-grid">
+        <div className="week-meals-grid" style={{ minHeight: 0 }}>
           {filteredDays.map((day, idx) => (
-            <div key={idx} className="day-card" style={{ padding: '1rem' }}>
-              <div className="day-card-header">
+            <div key={idx} className="day-card" style={{ padding: '0.75rem', overflow: 'hidden' }}>
+              <div className="day-card-header" style={{ marginBottom: '0.5rem', paddingBottom: '0.5rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {day.dayNameShort}
                   </div>
-                  <div style={{ fontSize: '2rem', fontWeight: 300, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)', lineHeight: 1 }}>
+                  <div style={{ fontSize: '1.75rem', fontWeight: 300, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)', lineHeight: 1 }}>
                     {day.dayNum}
                   </div>
                 </div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: day.isToday ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: day.isToday ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                   {day.isToday ? 'Today' : day.monthShort}
                 </div>
               </div>
               
-              <div className="day-card-meals">
+              <div className="day-card-meals" style={{ gap: '0.5rem' }}>
                 {day.lunch ? (
-                  <div className="day-meal-block">
+                  <div className="day-meal-block" style={{ padding: '0.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span className="meal-type-badge lunch" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>🥗 LUNCH</span>
                       <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
                     </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.lunch.name}</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.lunch.name}</div>
                     {day.lunch.cook && (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', width: 'fit-content',
@@ -334,18 +334,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     )}
                   </div>
                 ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5 }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>No Lunch</span>
+                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.5rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Lunch</span>
                   </div>
                 )}
                 
                 {day.dinner ? (
-                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)', padding: '0.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span className="meal-type-badge dinner" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>🍽️ DINNER</span>
                       <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
                     </div>
-                    <div style={{ fontSize: '1rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.dinner.name}</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.2, flex: 1 }}>{day.dinner.name}</div>
                     {day.dinner.cook && (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', width: 'fit-content',
@@ -356,14 +356,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     )}
                   </div>
                 ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5 }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>No Dinner</span>
+                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.5rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Dinner</span>
                   </div>
                 )}
               </div>
 
               {day.dinner && day.dinner.name !== 'No meal scheduled' && (
-                <div style={{ marginTop: '0.75rem', height: '90px' }}>
+                <div style={{ marginTop: '0.5rem', height: '70px', flexShrink: 0 }}>
                   <img 
                     src={getMealImage(idx)} 
                     alt={day.dinner.name} 
