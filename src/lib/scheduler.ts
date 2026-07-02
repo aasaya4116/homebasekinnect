@@ -43,7 +43,7 @@ export async function generateSchedule(daysOut: number = 30) {
       const sheets = google.sheets({ version: 'v4', auth });
       const existingRes = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `'Scheduled Meals'!A2:F100`,
+        range: `'Scheduled Meals'!A2:G100`,
       });
       const rows = existingRes.data.values || [];
       existingSchedule = rows.map((row, idx) => ({
@@ -54,6 +54,7 @@ export async function generateSchedule(daysOut: number = 30) {
         prepTime: row[3] || "",
         ingredients: row[4] || "",
         cook: row[5] || "",
+        image: row[6] && row[6].startsWith('http') ? row[6] : undefined,
       }));
     } catch {
       // No existing schedule, that's fine
@@ -353,16 +354,16 @@ async function writeScheduleToSheet(schedule: Meal[]) {
       });
     }
 
-    // 2. Format Data — now includes Cook column
+    // 2. Format Data — now includes Cook & Image URL columns
     const values = [
-      ['Date', 'Meal', 'Type', 'Prep Time', 'Ingredients', 'Cook'], // Header
-      ...schedule.map(s => [s.date, s.name, s.type, s.prepTime, s.ingredients, s.cook])
+      ['Date', 'Meal', 'Type', 'Prep Time', 'Ingredients', 'Cook', 'Image URL'], // Header
+      ...schedule.map(s => [s.date, s.name, s.type, s.prepTime, s.ingredients, s.cook, s.image || ""])
     ];
 
     // 3. Clear existing schedule and rewrite
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: `'${tabName}'!A1:F500`
+      range: `'${tabName}'!A1:G500`
     });
 
     await sheets.spreadsheets.values.update({
@@ -390,7 +391,7 @@ async function writeGroceryListToSheet(schedule: Meal[]) {
     try {
       const prevRes = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: `'Scheduled Meals'!A2:F100`,
+        range: `'Scheduled Meals'!A2:G100`,
       });
     const prevRows = prevRes.data.values || [];
     previousSchedule = prevRows.map((row, idx) => ({
@@ -400,6 +401,7 @@ async function writeGroceryListToSheet(schedule: Meal[]) {
       type: row[2] || "",
       prepTime: row[3] || "",
       ingredients: row[4] || "",
+      image: row[6] && row[6].startsWith('http') ? row[6] : undefined,
     }));
   } catch {
     // No previous schedule exists

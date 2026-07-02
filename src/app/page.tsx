@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, ShoppingCart, RefreshCw, User, ArrowRight } from "lucide-react";
 import Clock from "@/components/Clock";
 import Weather from "@/components/Weather";
+import { getSmartMealImage } from "@/lib/mealImages";
 
 export const revalidate = 1800; // 30 minutes ISR caching
 
@@ -19,17 +20,8 @@ function getCookBadge(cook: string) {
   return { bg: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6", label: "Both" };
 }
 
-const curatedFoodImages = [
-  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
-  "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327",
-  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38",
-  "https://images.unsplash.com/photo-1482049016688-2d3e1b311543"
-];
-
-function getMealImage(index: number): string {
-  const base = curatedFoodImages[index % curatedFoodImages.length];
-  return `${base}?auto=format&fit=crop&w=400&h=300&q=80`;
+function getMealImage(meal: any, index: number): string {
+  return getSmartMealImage(meal, index);
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ cook?: string }> }) {
@@ -165,7 +157,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                 )}
               </div>
               <img 
-                src={getMealImage(0)} 
+                src={getMealImage(todaysDinner, 0)} 
                 alt={todaysDinner.name} 
                 style={{ 
                   width: '260px', 
@@ -187,22 +179,22 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         </div>
 
         {/* LUNCH WIDGET (1fr) */}
-        <div className="widget" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="widget-header" style={{ marginBottom: '1rem' }}>
+        <div className="widget" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
             <div className="widget-title">
               <Utensils size={15} color="var(--accent-green)"/>
               Today's Lunch
             </div>
           </div>
           {todaysLunch ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, justifyContent: 'center' }}>
-              <span className="meal-type-badge lunch" style={{ fontSize: '0.75rem', width: 'fit-content' }}>🥗 LUNCH</span>
-              <div style={{ fontSize: '1.3rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{todaysLunch.name}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
+              <span className="meal-type-badge lunch" style={{ fontSize: '0.65rem', width: 'fit-content' }}>🥗 LUNCH</span>
+              <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{todaysLunch.name}</div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: 'auto' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}><ClockIcon size={14} style={{ display: 'inline', marginRight: '4px' }}/>{todaysLunch.prepTime}</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}><ClockIcon size={14} style={{ display: 'inline', marginRight: '4px' }}/>{todaysLunch.prepTime}</span>
                 {todaysLunch.cook && (
                    <span style={{
-                    fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px',
+                    fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px',
                     background: getCookBadge(todaysLunch.cook).bg, color: getCookBadge(todaysLunch.cook).color
                   }}>
                     {getCookBadge(todaysLunch.cook).label}
@@ -216,8 +208,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         </div>
 
         {/* SCHEDULE WIDGET (1fr) */}
-        <div className="widget" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="widget-header" style={{ marginBottom: '1rem' }}>
+        <div className="widget" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
             <div className="widget-title">
               <CalendarIcon size={15} color="var(--accent-blue)"/>
               Tonight's Schedule
@@ -227,13 +219,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             </span>
           </div>
           {schedule.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1, overflow: 'hidden' }}>
               {schedule.slice(0, 3).map((event, i) => (
-                <div key={i} className="event-row" style={{ padding: '0.5rem 0' }}>
-                  <div className="event-dot" style={{ backgroundColor: event.color, boxShadow: `0 0 8px ${event.color}40`, height: '24px' }} />
-                  <div>
-                    <div className="event-title" style={{ fontSize: '1rem' }}>{event.title}</div>
-                    <div className="event-time" style={{ fontSize: '0.85rem' }}><ClockIcon size={12}/> {event.time}</div>
+                <div key={i} className="event-row" style={{ padding: '0.35rem 0' }}>
+                  <div className="event-dot" style={{ backgroundColor: event.color, boxShadow: `0 0 8px ${event.color}40`, height: '20px' }} />
+                  <div style={{ overflow: 'hidden' }}>
+                    <div className="event-title" style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
+                    <div className="event-time" style={{ fontSize: '0.75rem' }}><ClockIcon size={12}/> {event.time}</div>
                   </div>
                 </div>
               ))}
@@ -244,8 +236,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         </div>
 
         {/* GROCERY WIDGET (1fr) */}
-        <div className="widget" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="widget-header" style={{ marginBottom: '1rem' }}>
+        <div className="widget" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
             <div className="widget-title">
               <ShoppingCart size={15} color="var(--accent-green)"/>
               Grocery List
@@ -255,15 +247,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             </span>
           </div>
           {groceryItems.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <div style={{ fontSize: '2.5rem', color: 'var(--accent-blue)', fontWeight: 700, lineHeight: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ fontSize: '2.2rem', color: 'var(--accent-blue)', fontWeight: 700, lineHeight: 1 }}>
                 {toBuyCount}
               </div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>To Buy</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>To Buy</div>
               
               {restockCount > 0 && (
-                <div style={{ fontSize: '1rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1rem' }}>
-                  <RefreshCw size={16}/> {restockCount} Restock Items
+                <div style={{ fontSize: '0.85rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem' }}>
+                  <RefreshCw size={14}/> {restockCount} Restock Items
                 </div>
               )}
             </div>
@@ -365,7 +357,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               {day.dinner && day.dinner.name !== 'No meal scheduled' && (
                 <div style={{ marginTop: '0.4rem', flex: '0 1 55px', minHeight: '35px', maxHeight: '55px', flexShrink: 1, overflow: 'hidden' }}>
                   <img 
-                    src={getMealImage(idx)} 
+                    src={getMealImage(day.dinner, idx)} 
                     alt={day.dinner.name} 
                     style={{ 
                       width: '100%', 

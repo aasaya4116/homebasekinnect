@@ -10,6 +10,7 @@ export type Meal = {
   date?: string;
   cookTime?: string;
   cook?: string;
+  image?: string;
 };
 
 export type Event = {
@@ -62,7 +63,8 @@ export async function getRawInventory(type?: string): Promise<Meal[]> {
       name: row[1] || "Eat Out",
       type: row[0] || "Dinner",
       prepTime: row[4] || "N/A",
-      ingredients: row[5] || ""
+      ingredients: row[5] || "",
+      image: row[6] && row[6].startsWith('http') ? row[6] : undefined,
     }));
   } catch (error) {
     console.error("Failed to fetch raw inventory:", error);
@@ -78,7 +80,7 @@ export async function getWeeklyMeals(): Promise<Meal[]> {
     // Read from the generated "Scheduled Meals" tab (up to 100 rows for monthly view)
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `'Scheduled Meals'!A2:F100`, // Skip header, includes Cook column
+      range: `'Scheduled Meals'!A2:G100`, // Skip header, includes Cook and Image columns
     });
 
     const rows = res.data.values || [];
@@ -92,6 +94,7 @@ export async function getWeeklyMeals(): Promise<Meal[]> {
       cookTime: "See Sheet", 
       ingredients: row[4] || "",
       cook: row[5] || "Both",
+      image: row[6] && row[6].startsWith('http') ? row[6] : undefined,
     }));
 
     return meals;
