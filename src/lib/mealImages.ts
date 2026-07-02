@@ -18,8 +18,8 @@ const categoryMap: { keywords: string[]; images: string[] }[] = [
     images: [
       "https://images.unsplash.com/photo-1565299585323-38d6b0865b47", // Delicious tacos
       "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b", // Tacos array
-      "https://images.unsplash.com/photo-1626700051175-6818013e1d4f", // Burrito / fajitas
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38", // Nachos & salsa
+      "https://images.unsplash.com/photo-1565299507177-b0ac66763828", // Tacos on plate
+      "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c", // Nachos & guacamole
       "https://images.unsplash.com/photo-1599974579688-8dbdd335c77f"  // Quesadillas
     ]
   },
