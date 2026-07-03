@@ -331,73 +331,75 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                 </div>
               </div>
               
-              <div className="day-card-meals" style={{ gap: '0.4rem', flex: '1 1 auto', minHeight: 0, justifyContent: 'space-around' }}>
+              <div className="day-card-meals" style={{ gap: '0.6rem', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                 {day.lunch ? (
-                  <div className="day-meal-block" style={{ padding: '0.4rem', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="meal-type-badge lunch" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>🥗 LUNCH</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
-                        <MealSwapModal dateStr={day.targetDateStr} mealType="Lunch" currentMealName={day.lunch.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
+                  <div className="day-meal-block" style={{ padding: '0.6rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <span className="meal-type-badge lunch" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>🥗 LUNCH</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}><ClockIcon size={11} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
+                          <MealSwapModal dateStr={day.targetDateStr} mealType="Lunch" currentMealName={day.lunch.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
+                        </div>
                       </div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.25, margin: '0.3rem 0', wordBreak: 'break-word' }}>{day.lunch.name}</div>
+                      {day.lunch.cook && (
+                        <span style={{
+                          fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', display: 'inline-block',
+                          background: getCookBadge(day.lunch.cook).bg, color: getCookBadge(day.lunch.cook).color
+                        }}>
+                          {getCookBadge(day.lunch.cook).label}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{day.lunch.name}</div>
-                    {day.lunch.cook && (
-                      <span style={{
-                        fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', width: 'fit-content',
-                        background: getCookBadge(day.lunch.cook).bg, color: getCookBadge(day.lunch.cook).color
-                      }}>
-                        {getCookBadge(day.lunch.cook).label}
-                      </span>
-                    )}
+                    <div style={{ flex: 1, minHeight: '60px', width: '100%', borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem', position: 'relative', border: '1px solid var(--border-color)' }}>
+                      <img 
+                        src={getMealImage(day.lunch, idx + 10)} 
+                        alt={day.lunch.name} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+                      />
+                    </div>
                   </div>
                 ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.4rem', flexShrink: 0 }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>No Lunch</span>
+                  <div className="day-meal-block" style={{ flex: 1, borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Lunch Scheduled</span>
                   </div>
                 )}
                 
                 {day.dinner ? (
-                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)', padding: '0.4rem', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="meal-type-badge dinner" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>🍽️ DINNER</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
-                        <MealSwapModal dateStr={day.targetDateStr} mealType="Dinner" currentMealName={day.dinner.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
+                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)', padding: '0.6rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                        <span className="meal-type-badge dinner" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>🍽️ DINNER</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}><ClockIcon size={11} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
+                          <MealSwapModal dateStr={day.targetDateStr} mealType="Dinner" currentMealName={day.dinner.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
+                        </div>
                       </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.25, margin: '0.3rem 0', wordBreak: 'break-word' }}>{day.dinner.name}</div>
+                      {day.dinner.cook && (
+                        <span style={{
+                          fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', display: 'inline-block',
+                          background: getCookBadge(day.dinner.cook).bg, color: getCookBadge(day.dinner.cook).color
+                        }}>
+                          {getCookBadge(day.dinner.cook).label}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{day.dinner.name}</div>
-                    {day.dinner.cook && (
-                      <span style={{
-                        fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', width: 'fit-content',
-                        background: getCookBadge(day.dinner.cook).bg, color: getCookBadge(day.dinner.cook).color
-                      }}>
-                        {getCookBadge(day.dinner.cook).label}
-                      </span>
-                    )}
+                    <div style={{ flex: 1, minHeight: '60px', width: '100%', borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem', position: 'relative', border: '1px solid var(--border-color)' }}>
+                      <img 
+                        src={getMealImage(day.dinner, idx)} 
+                        alt={day.dinner.name} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+                      />
+                    </div>
                   </div>
                 ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.4rem', flexShrink: 0 }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>No Dinner</span>
+                  <div className="day-meal-block" style={{ flex: 1, borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Dinner Scheduled</span>
                   </div>
                 )}
               </div>
-
-              {day.dinner && day.dinner.name !== 'No meal scheduled' && (
-                <div style={{ marginTop: '0.4rem', flex: '0 1 40px', minHeight: '25px', maxHeight: '40px', flexShrink: 1, overflow: 'hidden' }}>
-                  <img 
-                    src={getMealImage(day.dinner, idx)} 
-                    alt={day.dinner.name} 
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      borderRadius: '6px', 
-                      objectFit: 'cover', 
-                      border: '1px solid var(--border-color)',
-                    }}
-                  />
-                </div>
-              )}
             </div>
           ))}
         </div>
