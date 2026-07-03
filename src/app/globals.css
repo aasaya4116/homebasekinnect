@@ -472,7 +472,7 @@ p {
   display: grid;
   grid-template-columns: 2.2fr 1fr 1fr 1fr 1.2fr;
   gap: 0.4rem;
-  height: 20vh; /* Compact top section — optimized for 21" display */
+  height: 36vh; /* Balanced top section — gives hero widgets & photo frame proper breathing room */
   flex: 0 0 auto;
   min-height: 0;
   overflow: hidden;
