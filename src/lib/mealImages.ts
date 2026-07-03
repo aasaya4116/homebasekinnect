@@ -16,8 +16,7 @@ const categoryMap: { keywords: string[]; images: string[] }[] = [
     // Spaghetti / Pasta Sauce (Midwest Foodie Recipe Override)
     keywords: ["spaghetti", "spagetti", "pasta sauce", "marinara", "bolognese"],
     images: [
-      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce-1.jpg", // Midwest Foodie spaghetti bowl
-      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce.jpg"  // Midwest Foodie spaghetti ingredients
+      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce-1.jpg" // Midwest Foodie clean spaghetti bowl
     ]
   },
   {
