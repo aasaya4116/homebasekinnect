@@ -27,6 +27,8 @@ const categoryMap: { keywords: string[]; images: string[] }[] = [
     // Italian / Pasta / Noodles
     keywords: ["pasta", "spaghetti", "lasagna", "alfredo", "bolognese", "ziti", "ravioli", "carbonara", "macaroni", "mac and cheese", "noodle", "penne", "rigatoni", "parmigiana", "gnocchi", "linguine", "fettuccine", "pesto", "manicotti", "tortellini"],
     images: [
+      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce-1.jpg", // Midwest Foodie spaghetti bowl
+      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce.jpg", // Midwest Foodie spaghetti sauce
       "https://images.unsplash.com/photo-1555396273-367ea4eb4db5", // Gourmet restaurant pasta
       "https://images.unsplash.com/photo-1621996346565-e3d5d6281298", // Rigatoni tomato sauce
       "https://images.unsplash.com/photo-1546549032-9571cd6b27df", // Spaghetti
