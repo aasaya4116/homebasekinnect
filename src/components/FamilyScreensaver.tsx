@@ -20,6 +20,7 @@ export default function FamilyScreensaver({
   const [kenBurnsKey, setKenBurnsKey] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const slideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastStartedRef = useRef<number>(0);
 
   // Randomize Ken Burns effect for each slide
   const getKenBurnsStyle = useCallback((index: number) => {
@@ -37,6 +38,7 @@ export default function FamilyScreensaver({
   const startNow = useCallback(() => {
     if (photos.length === 0) return;
     if (timerRef.current) clearTimeout(timerRef.current);
+    lastStartedRef.current = Date.now();
     setCurrentIndex(Math.floor(Math.random() * photos.length));
     setKenBurnsKey((k) => k + 1);
     setIsActive(true);
@@ -44,6 +46,9 @@ export default function FamilyScreensaver({
 
   // Reset idle timer on any user activity
   const resetIdleTimer = useCallback(() => {
+    // Ignore mouse/trackpad jitter within 1.5 seconds of launching screensaver
+    if (Date.now() - lastStartedRef.current < 1500) return;
+
     if (isActive) {
       setIsActive(false);
       setIsTransitioning(false);
