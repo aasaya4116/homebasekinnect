@@ -104,7 +104,7 @@ p {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: var(--shadow-widget);
   transition: border-color 0.3s ease;
 }

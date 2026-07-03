@@ -57,7 +57,7 @@ export default function FamilyScreensaver({
 
   // Set up user activity listeners
   useEffect(() => {
-    const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'click', 'scroll'];
+    const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'scroll'];
     events.forEach((e) => window.addEventListener(e, resetIdleTimer, { passive: true }));
     window.addEventListener('start-screensaver', startNow);
     resetIdleTimer(); // Start the initial timer

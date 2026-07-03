@@ -112,7 +112,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         {/* HERO WIDGET (2.5fr) */}
         <div className="widget" style={{ padding: 0, overflow: 'hidden' }}>
           {todaysDinner && todaysDinner.name !== 'No meal scheduled' ? (
-            <div style={{ padding: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+            <div style={{ padding: '0.85rem 1rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, height: '100%' }}>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <span className="widget-badge" style={{ background: 'var(--accent-orange-glow)', color: 'var(--accent-orange)', fontSize: '0.75rem' }}>
@@ -283,8 +283,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       </div>
 
       {/* BOTTOM SECTION: 7-Day Grid */}
-      <div className="widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1rem', minHeight: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0 }}>
+      <div className="widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.75rem', minHeight: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexShrink: 0 }}>
           <div className="widget-title" style={{ fontSize: '1rem' }}>
             <Zap size={18} color="var(--accent-green)"/>
             The Week Ahead

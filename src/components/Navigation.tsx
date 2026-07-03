@@ -40,7 +40,11 @@ export default function Navigation() {
           ))}
         </div>
         <button
-          onClick={() => window.dispatchEvent(new Event('start-screensaver'))}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.dispatchEvent(new Event('start-screensaver'));
+          }}
           style={{
             background: 'var(--bg-panel-hover)',
             border: '1px solid var(--border-color)',
