@@ -1,9 +1,10 @@
-import { getWeeklyMeals, getTodaySchedule, getGroceryList } from "@/lib/data";
+import { getWeeklyMeals, getTodaySchedule, getGroceryList, getRawInventory } from "@/lib/data";
 import { generateSchedule } from "@/lib/scheduler";
 import { revalidatePath } from "next/cache";
 import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, ShoppingCart, RefreshCw, User, ArrowRight } from "lucide-react";
 import Clock from "@/components/Clock";
 import Weather from "@/components/Weather";
+import MealSwapModal from "@/components/MealSwapModal";
 import { getSmartMealImage } from "@/lib/mealImages";
 
 export const revalidate = 1800; // 30 minutes ISR caching
@@ -31,6 +32,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const allMeals = await getWeeklyMeals();
   const schedule = await getTodaySchedule();
   const groceryItems = await getGroceryList();
+  const rawInventory = await getRawInventory();
 
   const daysCount = 7; // Rolling 7-day view
 
@@ -126,10 +128,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                 <h2 style={{ fontSize: '2.4rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>
                   {todaysDinner.name}
                 </h2>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
                   <span className="dinner-meta-chip" style={{ fontSize: '1rem' }}>
                     <ClockIcon size={16} color="var(--accent-blue)"/> {todaysDinner.prepTime}
                   </span>
+                  <MealSwapModal
+                    dateStr={days[0].targetDateStr}
+                    mealType="Dinner"
+                    currentMealName={todaysDinner.name}
+                    inventory={rawInventory}
+                    label="Swap Dinner 🔄"
+                    buttonStyle={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                  />
                 </div>
                 {tomorrowsDinner && tomorrowsDinner.name !== 'No meal scheduled' && (
                   <div style={{ 
@@ -185,6 +195,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               <Utensils size={15} color="var(--accent-green)"/>
               Today's Lunch
             </div>
+            <MealSwapModal
+              dateStr={days[0].targetDateStr}
+              mealType="Lunch"
+              currentMealName={todaysLunch?.name || "None"}
+              inventory={rawInventory}
+              label="🔄"
+            />
           </div>
           {todaysLunch ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
@@ -313,7 +330,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   <div className="day-meal-block" style={{ padding: '0.4rem', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span className="meal-type-badge lunch" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>🥗 LUNCH</span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
+                        <MealSwapModal dateStr={day.targetDateStr} mealType="Lunch" currentMealName={day.lunch.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
+                      </div>
                     </div>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600, lineHeight: 1.2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{day.lunch.name}</div>
                     {day.lunch.cook && (
@@ -335,7 +355,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)', padding: '0.4rem', flexShrink: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span className="meal-type-badge dinner" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>🍽️ DINNER</span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}><ClockIcon size={10} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
+                        <MealSwapModal dateStr={day.targetDateStr} mealType="Dinner" currentMealName={day.dinner.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
+                      </div>
                     </div>
                     <div style={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{day.dinner.name}</div>
                     {day.dinner.cook && (
