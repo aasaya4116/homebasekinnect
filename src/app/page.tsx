@@ -94,8 +94,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   return (
     <div className="dashboard-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <Clock />
           <Weather />
         </div>
@@ -125,7 +125,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     </span>
                   )}
                 </div>
-                <h2 style={{ fontSize: '2.4rem', margin: '0 0 0.75rem 0', lineHeight: 1.15, fontWeight: 700 }}>
+                <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0', lineHeight: 1.15, fontWeight: 700 }}>
                   {todaysDinner.name}
                 </h2>
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
@@ -170,7 +170,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                 src={getMealImage(todaysDinner, 0)} 
                 alt={todaysDinner.name} 
                 style={{ 
-                  width: '260px', 
+                  width: '200px', 
                   height: '100%', 
                   borderRadius: '16px', 
                   objectFit: 'cover', 
@@ -378,7 +378,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               </div>
 
               {day.dinner && day.dinner.name !== 'No meal scheduled' && (
-                <div style={{ marginTop: '0.4rem', flex: '0 1 55px', minHeight: '35px', maxHeight: '55px', flexShrink: 1, overflow: 'hidden' }}>
+                <div style={{ marginTop: '0.4rem', flex: '0 1 40px', minHeight: '25px', maxHeight: '40px', flexShrink: 1, overflow: 'hidden' }}>
                   <img 
                     src={getMealImage(day.dinner, idx)} 
                     alt={day.dinner.name} 

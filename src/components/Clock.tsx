@@ -16,8 +16,8 @@ export default function Clock() {
   const displayHour = hours % 12 || 12;
 
   const dateStr = time.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
+    weekday: 'short',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
@@ -30,13 +30,15 @@ export default function Clock() {
           50% { opacity: 0.3; }
         }
       `}</style>
-      <div className="clock-time" style={{ fontSize: '3rem' }}>
-        {displayHour}
-        <span style={{ animation: 'blink-colon 1s ease-in-out infinite' }}>:</span>
-        {minutes}
-        <span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: '6px' }}>{ampm}</span>
+      <div className="clock-time" style={{ fontSize: '2.4rem', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+        <span>
+          {displayHour}
+          <span style={{ animation: 'blink-colon 1s ease-in-out infinite' }}>:</span>
+          {minutes}
+          <span style={{ fontSize: '0.9rem', fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: '4px' }}>{ampm}</span>
+        </span>
+        <span style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--text-secondary)' }}>· {dateStr}</span>
       </div>
-      <div className="clock-date" style={{ fontSize: '0.9rem' }}>{dateStr}</div>
     </div>
   );
 }
