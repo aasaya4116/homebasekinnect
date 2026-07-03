@@ -10,7 +10,7 @@ interface FamilyScreensaverProps {
 
 export default function FamilyScreensaver({
   photos,
-  idleTimeout = 2 * 60 * 1000,
+  idleTimeout = 30 * 1000,
   slideDuration = 8000,
 }: FamilyScreensaverProps) {
   const [isActive, setIsActive] = useState(false);
@@ -34,6 +34,14 @@ export default function FamilyScreensaver({
     return effects[index % effects.length];
   }, []);
 
+  const startNow = useCallback(() => {
+    if (photos.length === 0) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setCurrentIndex(Math.floor(Math.random() * photos.length));
+    setKenBurnsKey((k) => k + 1);
+    setIsActive(true);
+  }, [photos.length]);
+
   // Reset idle timer on any user activity
   const resetIdleTimer = useCallback(() => {
     if (isActive) {
@@ -43,23 +51,23 @@ export default function FamilyScreensaver({
     if (timerRef.current) clearTimeout(timerRef.current);
     if (photos.length === 0) return;
     timerRef.current = setTimeout(() => {
-      setCurrentIndex(Math.floor(Math.random() * photos.length));
-      setKenBurnsKey((k) => k + 1);
-      setIsActive(true);
+      startNow();
     }, idleTimeout);
-  }, [isActive, idleTimeout, photos.length]);
+  }, [isActive, idleTimeout, photos.length, startNow]);
 
   // Set up user activity listeners
   useEffect(() => {
     const events = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'click', 'scroll'];
     events.forEach((e) => window.addEventListener(e, resetIdleTimer, { passive: true }));
+    window.addEventListener('start-screensaver', startNow);
     resetIdleTimer(); // Start the initial timer
 
     return () => {
       events.forEach((e) => window.removeEventListener(e, resetIdleTimer));
+      window.removeEventListener('start-screensaver', startNow);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [resetIdleTimer]);
+  }, [resetIdleTimer, startNow]);
 
   // Auto-advance slides when screensaver is active
   useEffect(() => {
