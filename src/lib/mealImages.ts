@@ -13,6 +13,14 @@ export type MealImageInput = {
 
 const categoryMap: { keywords: string[]; images: string[] }[] = [
   {
+    // Spaghetti / Pasta Sauce (Midwest Foodie Recipe Override)
+    keywords: ["spaghetti", "spagetti", "pasta sauce", "marinara", "bolognese"],
+    images: [
+      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce-1.jpg", // Midwest Foodie spaghetti bowl
+      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce.jpg"  // Midwest Foodie spaghetti ingredients
+    ]
+  },
+  {
     // Mexican / Tacos / Burritos
     keywords: ["taco", "mexican", "burrito", "enchilada", "quesadilla", "fajita", "guacamole", "salsa", "carnitas", "barbacoa", "tortilla", "nacho", "tostada", "tamale", "churros", "elote"],
     images: [
@@ -25,11 +33,8 @@ const categoryMap: { keywords: string[]; images: string[] }[] = [
   },
   {
     // Italian / Pasta / Noodles
-    keywords: ["pasta", "spaghetti", "lasagna", "alfredo", "bolognese", "ziti", "ravioli", "carbonara", "macaroni", "mac and cheese", "noodle", "penne", "rigatoni", "parmigiana", "gnocchi", "linguine", "fettuccine", "pesto", "manicotti", "tortellini"],
+    keywords: ["pasta", "lasagna", "alfredo", "ziti", "ravioli", "carbonara", "macaroni", "mac and cheese", "noodle", "penne", "rigatoni", "parmigiana", "gnocchi", "linguine", "fettuccine", "pesto", "manicotti", "tortellini"],
     images: [
-      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce-1.jpg", // Midwest Foodie spaghetti bowl
-      "https://midwestfoodieblog.com/wp-content/uploads/2023/08/homemade-pasta-sauce.jpg", // Midwest Foodie spaghetti sauce
-      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5", // Gourmet restaurant pasta
       "https://images.unsplash.com/photo-1621996346565-e3d5d6281298", // Rigatoni tomato sauce
       "https://images.unsplash.com/photo-1546549032-9571cd6b27df", // Spaghetti
       "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8", // Lasagna / baked ziti
@@ -148,8 +153,7 @@ const fallbackGourmetImages = [
   "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327",
   "https://images.unsplash.com/photo-1482049016688-2d3e1b311543",
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
-  "https://images.unsplash.com/photo-1540420773420-3366772f4999",
-  "https://images.unsplash.com/photo-1555396273-367ea4eb4db5"
+  "https://images.unsplash.com/photo-1540420773420-3366772f4999"
 ];
 
 /**
@@ -183,6 +187,9 @@ export function getSmartMealImage(meal?: MealImageInput | null, fallbackIndex: n
       }
       const absHash = Math.abs(hash);
       const chosenBase = category.images[absHash % category.images.length];
+      if (!chosenBase.includes("unsplash.com")) {
+        return chosenBase;
+      }
       return `${chosenBase}?auto=format&fit=crop&w=400&h=300&q=80`;
     }
   }
