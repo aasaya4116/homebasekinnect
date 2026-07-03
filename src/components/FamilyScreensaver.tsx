@@ -124,14 +124,17 @@ export default function FamilyScreensaver({
       }}
     >
       {/* Current photo with Ken Burns */}
-      <div
+      <img
         key={`current-${currentIndex}-${kenBurnsKey}`}
+        src={photos[currentIndex]}
+        alt="Family memory"
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `url(${photos[currentIndex]})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center',
           animation: `kenBurns ${slideDuration}ms ease-in-out forwards`,
           opacity: isTransitioning ? 0 : 1,
           transition: 'opacity 1.5s ease-in-out',
@@ -140,14 +143,17 @@ export default function FamilyScreensaver({
 
       {/* Next photo (fades in during transition) */}
       {isTransitioning && (
-        <div
+        <img
           key={`next-${nextIndex}-${kenBurnsKey}`}
+          src={photos[nextIndex]}
+          alt="Family memory"
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `url(${photos[nextIndex]})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
             animation: `kenBurns ${slideDuration}ms ease-in-out forwards`,
             opacity: 1,
             transition: 'opacity 1.5s ease-in-out',

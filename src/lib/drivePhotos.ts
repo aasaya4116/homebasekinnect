@@ -34,10 +34,9 @@ export async function getFamilyPhotos(): Promise<string[]> {
 
     const files = res.data.files || [];
 
-    // Build direct-access image URLs via Google's lh3 CDN proxy
-    // Format: https://lh3.googleusercontent.com/d/{FILE_ID}=w1920
+    // Use our server-side API proxy endpoint so any unauthenticated client (like Pi Kiosk) can load photos
     const photoUrls = files.map(
-      (f) => `https://lh3.googleusercontent.com/d/${f.id}=w1920`
+      (f) => `/api/photos/${f.id}`
     );
 
     // Cache the results
