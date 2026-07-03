@@ -39,30 +39,6 @@ export default function Navigation() {
             </Link>
           ))}
         </div>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            window.dispatchEvent(new Event('start-screensaver'));
-          }}
-          style={{
-            background: 'var(--bg-panel-hover)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '10px',
-            padding: '6px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            fontSize: '0.8rem',
-            fontWeight: 600,
-            transition: 'all 0.2s ease',
-          }}
-          title="Launch Family Photo Screensaver"
-        >
-          🖼️ Photos
-        </button>
         <ThemeToggle />
       </div>
     </nav>

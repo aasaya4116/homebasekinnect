@@ -21,22 +21,16 @@ export const viewport: Viewport = {
 
 import Navigation from "@/components/Navigation";
 import AutoRefresh from "@/components/AutoRefresh";
-import FamilyScreensaver from "@/components/FamilyScreensaver";
-import { getFamilyPhotos } from "@/lib/drivePhotos";
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Fetch family photos server-side for the screensaver
-  const familyPhotos = await getFamilyPhotos();
-
   return (
     <html lang="en" className={`${inter.variable}`}>
       <body>
         <AutoRefresh intervalMs={5 * 60 * 1000} />
-        <FamilyScreensaver photos={familyPhotos} />
         <div className="container">
           <Navigation />
           {children}

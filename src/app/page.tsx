@@ -6,6 +6,8 @@ import Clock from "@/components/Clock";
 import Weather from "@/components/Weather";
 import MealSwapModal from "@/components/MealSwapModal";
 import { getSmartMealImage } from "@/lib/mealImages";
+import { getFamilyPhotos } from "@/lib/drivePhotos";
+import FamilyPhotoFrame from "@/components/FamilyPhotoFrame";
 
 export const revalidate = 1800; // 30 minutes ISR caching
 
@@ -33,6 +35,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const schedule = await getTodaySchedule();
   const groceryItems = await getGroceryList();
   const rawInventory = await getRawInventory();
+  const familyPhotos = await getFamilyPhotos();
 
   const daysCount = 7; // Rolling 7-day view
 
@@ -280,6 +283,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             <div className="empty-state" style={{ height: '100%' }}>Schedule meals to generate list</div>
           )}
         </div>
+
+        {/* FAMILY PHOTO FRAME WIDGET (1.2fr) */}
+        <FamilyPhotoFrame photos={familyPhotos} />
       </div>
 
       {/* BOTTOM SECTION: 7-Day Grid */}
