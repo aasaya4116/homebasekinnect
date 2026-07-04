@@ -4,6 +4,7 @@ import { google } from 'googleapis';
 import { getGoogleAuth } from './googleAuth';
 import { todayStr, dayStr, dayOfWeek, zonedStartOfDay, zonedEndOfDay, zonedHourFloat } from './dates';
 import { cookForDate } from './cadence';
+import { closeOutDays } from './mealLog';
 
 const auth = getGoogleAuth([
   'https://www.googleapis.com/auth/spreadsheets',
@@ -315,6 +316,12 @@ export async function generateSchedule(daysOut: number = 30) {
     // restock rule sees actually-cooked past meals — not the schedule we're
     // about to write.
     const previousSchedule = existingSchedule;
+
+    // Safety net: snapshot any finalized past days into Meal History BEFORE we
+    // overwrite the plan tab. The nightly cron is the primary close-out trigger;
+    // this guarantees nothing is lost even if a regenerate happens first.
+    try { await closeOutDays(); } catch (e) { console.error("closeOut before regenerate failed:", e); }
+
     await writeScheduleToSheet(fullSchedule);
     await writeGroceryListToSheet(fullSchedule, previousSchedule);
 

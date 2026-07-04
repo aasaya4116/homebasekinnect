@@ -4,6 +4,7 @@ import { google } from "googleapis";
 import { getGoogleAuth } from "./googleAuth";
 import { generateSchedule } from "./scheduler";
 import { cookForDate } from "./cadence";
+import { logSwap } from "./mealLog";
 import { revalidatePath } from "next/cache";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1692O1jGvFv-aB00Xy7jU1kH_X0a0eB_E9nL2Q1b1O8c";
@@ -46,6 +47,7 @@ export async function swapMealAction(
 
     const rows = res.data.values || [];
     let foundIndex = -1;
+    let previousMeal = ""; // the dish being replaced — captured for the swap log
 
     // Search for matching date and meal type (1-indexed in Sheets)
     for (let i = 1; i < rows.length; i++) {
@@ -70,6 +72,7 @@ export async function swapMealAction(
 
       if (isSameDate && rType === mealType.trim().toLowerCase()) {
         foundIndex = i + 1; // 1-indexed sheet row number
+        previousMeal = row[1] || "";
         break;
       }
     }
@@ -95,6 +98,9 @@ export async function swapMealAction(
         },
       });
     }
+
+    // Record the deviation for long-term analytics (never blocks the swap).
+    await logSwap(dateStr, mealType, previousMeal, newMealName);
 
     // Invalidate Next.js cache so dashboard updates immediately
     revalidatePath("/", "layout");
