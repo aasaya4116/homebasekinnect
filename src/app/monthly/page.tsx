@@ -68,90 +68,48 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   
   while (dayCells.length % 7 !== 0) dayCells.push(null);
 
-  // Chunk into weeks
-  const weeks: (typeof dayCells)[] = [];
-  for (let i = 0; i < dayCells.length; i += 7) {
-    weeks.push(dayCells.slice(i, i + 7));
-  }
+  const weekCount = dayCells.length / 7;
+  const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   return (
     <div className="dashboard-container">
-      <div className="widget" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <a href={`/monthly?month=${prevMonth}&year=${prevYear}`} className="btn-primary" style={{ fontSize: '0.7rem', padding: '8px 14px' }}>
-            <ChevronLeft size={14} />
+      <div className="cal-shell">
+        <div className="cal-head">
+          <a href={`/monthly?month=${prevMonth}&year=${prevYear}`} className="cal-nav" aria-label="Previous month">
+            <ChevronLeft size={24} />
           </a>
-          <div className="widget-title" style={{ margin: 0 }}>
-            <CalendarIcon size={13} color="var(--gold)" />
+          <div className="cal-title">
+            <CalendarIcon size={22} color="var(--gold)" />
             {monthName}
           </div>
-          <a href={`/monthly?month=${nextMonth}&year=${nextYear}`} className="btn-primary" style={{ fontSize: '0.7rem', padding: '8px 14px' }}>
-            <ChevronRight size={14} />
+          <a href={`/monthly?month=${nextMonth}&year=${nextYear}`} className="cal-nav" aria-label="Next month">
+            <ChevronRight size={24} />
           </a>
         </div>
 
-        <div style={{ flex: 1, overflow: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' }}>
-            {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-              <div key={d} style={{ textAlign: 'center', fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-tertiary)', padding: '4px 0', letterSpacing: '0.05em' }}>
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {weeks.map((week, wIdx) => (
-            <div key={wIdx} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' }}>
-              {week.map((cell, dIdx) => {
-                if (!cell) return <div key={`pad-${dIdx}`} />;
-                return (
-                  <div key={cell.dayNum} style={{
-                    background: 'var(--bg-panel-hover)',
-                    borderRadius: '8px',
-                    padding: '6px',
-                    border: cell.isToday ? '1.5px solid var(--gold)' : '1px solid var(--border-color)',
-                    minHeight: '80px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                  }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: cell.isToday ? 'var(--gold)' : 'var(--text-primary)', marginBottom: '2px' }}>
-                      {cell.dayNum}
-                    </span>
-                    
-                    {cell.lunches.map((lunch, li) => (
-                      <div key={`l-${li}`} style={{
-                        fontSize: '0.5rem', padding: '2px 4px', borderRadius: '3px',
-                        background: 'rgba(16, 185, 129, 0.15)', color: '#10b981',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      }}>
-                        🥗 {lunch.name}
-                      </div>
-                    ))}
-                    
-                    {cell.dinners.map((dinner, di) => (
-                      <div key={`d-${di}`} style={{
-                        fontSize: '0.5rem', padding: '2px 4px', borderRadius: '3px',
-                        background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      }}>
-                        🍽️ {dinner.name}
-                      </div>
-                    ))}
-
-                    {cell.events.map((evt, ei) => (
-                      <div key={`e-${ei}`} style={{
-                        fontSize: '0.5rem', padding: '2px 4px', borderRadius: '3px',
-                        background: evt.color || 'var(--accent-blue)', color: '#fff',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      }}>
-                        {evt.title}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
+        <div className="cal-grid" style={{ gridTemplateRows: `auto repeat(${weekCount}, 1fr)` }}>
+          {weekdays.map((d) => (
+            <div key={d} className="cal-wd">{d}</div>
           ))}
+
+          {dayCells.map((cell, idx) => {
+            if (!cell) return <div key={`pad-${idx}`} className="cal-cell pad" />;
+            return (
+              <div key={cell.dateStr} className={`cal-cell${cell.isToday ? ' today' : ''}`}>
+                <span className="cal-daynum">{cell.dayNum}</span>
+
+                {cell.dinners.map((dinner, di) => (
+                  <div key={`d-${di}`} className="cal-chip dinner" title={dinner.name}>{dinner.name}</div>
+                ))}
+                {cell.lunches.map((lunch, li) => (
+                  <div key={`l-${li}`} className="cal-chip lunch" title={lunch.name}>{lunch.name}</div>
+                ))}
+                {cell.events.map((evt, ei) => (
+                  <div key={`e-${ei}`} className="cal-chip event" title={evt.title}>{evt.title}</div>
+                ))}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

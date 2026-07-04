@@ -632,6 +632,104 @@ h1, h2, h3, h4 {
 .m-cook { margin-top: auto; padding-top: 9px; display: flex; align-items: center; }
 
 /* ============================================================
+   MONTHLY CALENDAR (wall-filling, high-contrast, at-a-distance)
+   ============================================================ */
+
+.cal-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem 0 0;
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  flex: none;
+}
+.cal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.cal-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  background: var(--gold-fill);
+  color: var(--gold-ink);
+  border: none;
+  flex: none;
+  transition: transform 0.15s ease;
+}
+.cal-nav:active { transform: scale(0.96); }
+
+.cal-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  /* grid-template-rows is set inline from the week count so rows fill height */
+}
+.cal-wd {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  align-self: center;
+  padding-bottom: 2px;
+}
+.cal-cell {
+  background: var(--bg-panel-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 9px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+  overflow: hidden;
+}
+.cal-cell.pad { background: transparent; border: none; }
+.cal-cell.today { border: 2px solid var(--gold); background: var(--gold-dim); }
+.cal-daynum {
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.cal-cell.today .cal-daynum { color: var(--gold); }
+.cal-chip {
+  font-size: 1.05rem;
+  line-height: 1.2;
+  font-weight: 500;
+  padding: 5px 9px;
+  border-radius: 7px;
+  border-left: 3px solid var(--border-color);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-chip.dinner { border-left-color: var(--gold); background: var(--gold-dim); }
+.cal-chip.lunch  { border-left-color: var(--em);   background: var(--em-dim); }
+.cal-chip.event  { border-left-color: var(--accent-blue); background: var(--accent-blue-glow); font-weight: 600; }
+
+/* ============================================================
    THEME SEGMENTED TOGGLE (shows CURRENT state)
    ============================================================ */
 
