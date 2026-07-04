@@ -205,7 +205,8 @@ export function getCategory(ingredientName: string): string {
 export function buildGroceryList(
   schedule: any[],
   pantryStaples: Set<string>,
-  previousSchedule: any[] = []
+  previousSchedule: any[] = [],
+  today: string = "" // YYYY-MM-DD in the household timezone; gates Rule 9
 ): StructuredGroceryList {
   
   const itemMap = new Map<string, GroceryItem>();
@@ -262,10 +263,11 @@ export function buildGroceryList(
   // --- Rule 9: Auto-Replenishment from previous week ---
   previousSchedule.forEach(day => {
     if (!day.ingredients || day.ingredients === "Leftovers" || day.ingredients === "") return;
-    
-    // Only process meals whose date is in the past (they were "cooked")
-    const mealDate = new Date(day.date.replace(/-/g, '/'));
-    if (mealDate >= new Date()) return; // Not cooked yet
+
+    // Only meals whose date is strictly before today count as "cooked". Compare
+    // as YYYY-MM-DD strings so it doesn't depend on the server's timezone.
+    // (If `today` wasn't supplied, skip replenishment rather than guess.)
+    if (!day.date || !today || day.date.slice(0, 10) >= today) return;
     
     const rawItems = day.ingredients.split(',').map((i: string) => i.trim()).filter(Boolean);
     

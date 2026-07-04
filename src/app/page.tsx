@@ -4,6 +4,7 @@ import MealSwapModal from "@/components/MealSwapModal";
 import { getSmartMealImage } from "@/lib/mealImages";
 import { getFamilyPhotos } from "@/lib/drivePhotos";
 import FamilyPhotoFrame from "@/components/FamilyPhotoFrame";
+import { dayStr, dayParts } from "@/lib/dates";
 
 export const revalidate = 1800; // 30 minutes ISR caching
 
@@ -40,20 +41,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const daysCount = 7; // Rolling 7-day view
 
   const days = Array.from({ length: daysCount }).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const dayNameShort = d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
-    const dayNum = d.getDate();
-    const monthShort = d.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
-
-    const targetDateStr =
-      d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    // All day math is pinned to the household timezone (see lib/dates) so the
+    // dashboard never rolls to tomorrow at 8pm ET.
+    const targetDateStr = dayStr(i);
+    const { weekdayShort: dayNameShort, monthShort, dayNum } = dayParts(targetDateStr);
 
     const dayMeals = allMeals.filter((m) => {
       if (!m.date || m.date === "Unknown Date") return false;
-      const normalizedDateStr = m.date.replace(/-/g, "/");
-      const mDate = new Date(normalizedDateStr);
-      return mDate.getDate() === d.getDate() && mDate.getMonth() === d.getMonth() && mDate.getFullYear() === d.getFullYear();
+      return m.date.slice(0, 10) === targetDateStr;
     });
 
     const lunch = dayMeals.find((m) => (m.type || "").toLowerCase() === "lunch") || null;

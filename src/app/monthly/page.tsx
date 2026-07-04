@@ -1,14 +1,16 @@
 import { getWeeklyMeals, getFullDaySchedule } from "@/lib/data";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { todayStr as getTodayStr } from "@/lib/dates";
 
 export const revalidate = 1800;
 
 export default async function MonthlyPage({ searchParams }: { searchParams: Promise<{ month?: string; year?: string }> }) {
   const params = await searchParams;
   
-  const now = new Date();
-  const viewMonth = params.month ? parseInt(params.month) : now.getMonth();
-  const viewYear = params.year ? parseInt(params.year) : now.getFullYear();
+  const todayStr = getTodayStr(); // household-timezone "today" (YYYY-MM-DD)
+  const [todayYear, todayMonth] = todayStr.split("-").map(Number);
+  const viewMonth = params.month ? parseInt(params.month) : todayMonth - 1;
+  const viewYear = params.year ? parseInt(params.year) : todayYear;
   
   const allMeals = await getWeeklyMeals();
   const monthlyEvents = await getFullDaySchedule(90);
@@ -26,8 +28,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
   const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
 
-  const today = new Date();
-  const todayStr = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, '0') + "-" + String(today.getDate()).padStart(2, '0');
+  // (todayStr is computed above, pinned to the household timezone)
 
   // Build day cells
   const dayCells: (null | { dayNum: number; dateStr: string; isToday: boolean; dinners: any[]; lunches: any[]; events: any[] })[] = [];

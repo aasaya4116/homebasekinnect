@@ -1,7 +1,8 @@
-import { getWeeklyMeals, getTodaySchedule, getRawInventory, getPantryStaples, Meal } from './data';
+import { getRawInventory, getPantryStaples, Meal } from './data';
 import { buildGroceryList } from './groceryEngine';
 import { google } from 'googleapis';
 import { getGoogleAuth } from './googleAuth';
+import { todayStr, dayStr, dayOfWeek, zonedStartOfDay, zonedEndOfDay, zonedHourFloat } from './dates';
 
 const auth = getGoogleAuth([
   'https://www.googleapis.com/auth/spreadsheets',
@@ -63,11 +64,8 @@ export async function generateSchedule(daysOut: number = 30) {
     // 3. Fetch Calendar Events for the target duration
     const calendar = google.calendar({ version: 'v3', auth });
     
-    const timeMin = new Date();
-    timeMin.setHours(0,0,0,0);
-    const timeMax = new Date();
-    timeMax.setHours(23,59,59,999);
-    timeMax.setDate(timeMax.getDate() + daysOut - 1);
+    const timeMin = zonedStartOfDay(todayStr());
+    const timeMax = zonedEndOfDay(dayStr(daysOut - 1));
 
     const res = await calendar.events.list({
       calendarId: CALENDAR_ID,
@@ -98,11 +96,11 @@ export async function generateSchedule(daysOut: number = 30) {
 
     const proteinKeywords = ["chicken", "beef", "pork", "fish", "shrimp", "turkey", "tofu", "salmon", "cod", "steak"];
 
+    const today = todayStr();
+
     for (let i = 0; i < daysOut; i++) {
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() + i);
-      const dateStr = targetDate.toISOString().split('T')[0];
-      const dayOfWeek = targetDate.getDay(); // 0=Sun, 1=Mon, etc.
+      const dateStr = dayStr(i);
+      const dow = dayOfWeek(dateStr); // 0=Sun, 1=Mon, etc.
 
       // Calculate which week we're in (for resetting hasEatenOutThisWeek)
       const currentWeek = Math.floor(i / 7);
@@ -116,13 +114,15 @@ export async function generateSchedule(daysOut: number = 30) {
         }
       }
 
-      // OPTION B: Check if this day already has a meal in the existing schedule
-      const existingMeal = existingSchedule.find(m => {
-        if (!m.date) return false;
-        const normalizedDate = m.date.replace(/-/g, '/');
-        const mDate = new Date(normalizedDate);
-        return mDate.getDate() === targetDate.getDate() && mDate.getMonth() === targetDate.getMonth();
-      });
+      // Preserve only today's (or any past) already-scheduled dinner, so pressing
+      // Regenerate can't yank a meal that's already being cooked. Future days are
+      // regenerated fresh — that's what "Regenerate" implies.
+      const existingMeal = dateStr <= today
+        ? existingSchedule.find(m =>
+            !!m.date &&
+            m.date.slice(0, 10) === dateStr &&
+            (m.type || 'Dinner').toLowerCase() === 'dinner')
+        : undefined;
 
       if (existingMeal) {
         // Preserve the existing meal — it was already scheduled/cooked
@@ -138,7 +138,7 @@ export async function generateSchedule(daysOut: number = 30) {
       }
 
       // Assign cook based on day cadence
-      const cook = getCookForDay(dayOfWeek);
+      const cook = getCookForDay(dow);
 
       // RULE 2: Leftover Efficiency
       const yesterday = schedule[i - 1];
@@ -167,12 +167,10 @@ export async function generateSchedule(daysOut: number = 30) {
           if (isAllDay) {
             busynessScore += 2; 
           } else if (event.start?.dateTime) {
-            const startDate = new Date(event.start.dateTime);
-            const hours = startDate.getHours();
-            const minutes = startDate.getMinutes();
-            const timeVal = hours + (minutes / 60);
+            // Evaluate the event in the household's timezone, not the server's (UTC).
+            const timeVal = zonedHourFloat(new Date(event.start.dateTime));
 
-            if (hours >= 16) busynessScore += 1;
+            if (timeVal >= 16) busynessScore += 1;
 
             // RULE 3: Prime Time Conflict
             if (timeVal >= 16.0 && timeVal <= 18.5) {
@@ -183,7 +181,7 @@ export async function generateSchedule(daysOut: number = 30) {
       });
 
       // RULE 1: Take a Break
-      if ((dayOfWeek === 5 && !hasEatenOutThisWeek) || busynessScore >= 3) {
+      if ((dow === 5 && !hasEatenOutThisWeek) || busynessScore >= 3) {
         schedule.push({
           id: String(i),
           date: dateStr,
@@ -283,19 +281,16 @@ export async function generateSchedule(daysOut: number = 30) {
     let lunchIdx = 0;
 
     for (let i = 0; i < daysOut; i++) {
-      const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() + i);
-      const dateStr = targetDate.toISOString().split('T')[0];
-      const dayOfWeek = targetDate.getDay();
-      const cook = getCookForDay(dayOfWeek);
+      const dateStr = dayStr(i);
+      const cook = getCookForDay(dayOfWeek(dateStr));
 
-      // Check if lunch already exists in existing schedule
-      const existingLunch = existingSchedule.find(m => {
-        if (!m.date || m.type?.toLowerCase() !== 'lunch') return false;
-        const normalizedDate = m.date.replace(/-/g, '/');
-        const mDate = new Date(normalizedDate);
-        return mDate.getDate() === targetDate.getDate() && mDate.getMonth() === targetDate.getMonth();
-      });
+      // Preserve only today's/past lunch; regenerate the future.
+      const existingLunch = dateStr <= today
+        ? existingSchedule.find(m =>
+            !!m.date &&
+            m.type?.toLowerCase() === 'lunch' &&
+            m.date.slice(0, 10) === dateStr)
+        : undefined;
 
       if (existingLunch) {
         lunchSchedule.push(existingLunch);
@@ -322,9 +317,13 @@ export async function generateSchedule(daysOut: number = 30) {
     // Combine dinner + lunch schedules
     const fullSchedule = [...schedule, ...lunchSchedule];
 
-    // 6. Write back to Google Sheets
+    // 6. Write back to Google Sheets. Capture the genuine previous schedule
+    // (read at the top, before we overwrite the tab) so the grocery engine's
+    // restock rule sees actually-cooked past meals — not the schedule we're
+    // about to write.
+    const previousSchedule = existingSchedule;
     await writeScheduleToSheet(fullSchedule);
-    await writeGroceryListToSheet(fullSchedule);
+    await writeGroceryListToSheet(fullSchedule, previousSchedule);
 
     return fullSchedule;
   } catch (error) {
@@ -377,7 +376,7 @@ async function writeScheduleToSheet(schedule: Meal[]) {
   }
 }
 
-async function writeGroceryListToSheet(schedule: Meal[]) {
+async function writeGroceryListToSheet(schedule: Meal[], previousSchedule: Meal[] = []) {
   try {
     const sheets = google.sheets({ version: 'v4', auth });
     const spreadsheetId = SPREADSHEET_ID;
@@ -386,29 +385,10 @@ async function writeGroceryListToSheet(schedule: Meal[]) {
     // 1. Fetch pantry staples from Google Sheets (Rule 8)
     const pantryStaples = await getPantryStaples();
 
-    // 2. Fetch previous schedule for auto-replenishment (Rule 9)
-    let previousSchedule: Meal[] = [];
-    try {
-      const prevRes = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: `'Scheduled Meals'!A2:G100`,
-      });
-    const prevRows = prevRes.data.values || [];
-    previousSchedule = prevRows.map((row, idx) => ({
-      id: String(idx),
-      date: row[0] || "",
-      name: row[1] || "",
-      type: row[2] || "",
-      prepTime: row[3] || "",
-      ingredients: row[4] || "",
-      image: row[6] && row[6].startsWith('http') ? row[6] : undefined,
-    }));
-  } catch {
-    // No previous schedule exists
-  }
-
-  // 3. Run the Grocery Engine (Rules 7-10)
-  const groceryList = buildGroceryList(schedule, pantryStaples, previousSchedule);
+    // 2. Run the Grocery Engine (Rules 7-10). `previousSchedule` is the genuine
+    // prior schedule captured before the tab was overwritten, so Rule 9 can
+    // restock ingredients from meals actually cooked in the past.
+    const groceryList = buildGroceryList(schedule, pantryStaples, previousSchedule, todayStr());
 
   console.log(`Grocery Engine: ${groceryList.totalItems} items across ${groceryList.categories.length} aisles`);
   console.log(`Filtered ${groceryList.filteredStaples.length} pantry staples: ${groceryList.filteredStaples.join(', ')}`);

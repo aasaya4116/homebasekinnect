@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { getGoogleAuth } from './googleAuth';
+import { todayStr, dayStr, zonedStartOfDay, zonedEndOfDay, zonedHourFloat, zonedTimeLabel } from './dates';
 
 export type Meal = {
   id: string;
@@ -107,11 +108,9 @@ export async function getWeeklyMeals(): Promise<Meal[]> {
 export async function getTodaySchedule(): Promise<Event[]> {
   try {
     const calendar = google.calendar({ version: 'v3', auth });
-    
-    const timeMin = new Date();
-    timeMin.setHours(0,0,0,0);
-    const timeMax = new Date();
-    timeMax.setHours(23,59,59,999);
+
+    const timeMin = zonedStartOfDay(todayStr());
+    const timeMax = zonedEndOfDay(todayStr());
 
     const res = await calendar.events.list({
       calendarId: CALENDAR_ID,
@@ -133,10 +132,10 @@ export async function getTodaySchedule(): Promise<Event[]> {
         include = true;
       } else if (event.start?.dateTime) {
         const startDate = new Date(event.start.dateTime);
-        const hours = startDate.getHours();
-        if (hours >= 16) {
+        // "Evening" is judged in the household's timezone, not the server's.
+        if (zonedHourFloat(startDate) >= 16) {
           include = true;
-          timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          timeStr = zonedTimeLabel(startDate);
         }
       }
 
@@ -162,12 +161,9 @@ export async function getTodaySchedule(): Promise<Event[]> {
 export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> {
   try {
     const calendar = google.calendar({ version: 'v3', auth });
-    
-    const timeMin = new Date();
-    timeMin.setHours(0,0,0,0);
-    const timeMax = new Date();
-    timeMax.setHours(23,59,59,999);
-    timeMax.setDate(timeMax.getDate() + daysOut - 1);
+
+    const timeMin = zonedStartOfDay(todayStr());
+    const timeMax = zonedEndOfDay(dayStr(daysOut - 1));
 
     const res = await calendar.events.list({
       calendarId: CALENDAR_ID,
@@ -194,16 +190,12 @@ export async function getFullDaySchedule(daysOut: number = 1): Promise<Event[]> 
           endDateStr = endD.toISOString().split('T')[0];
         }
       } else if (!isAllDay && event.start?.dateTime) {
-        const startDate = new Date(event.start.dateTime);
-        timeStr = startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        dateStr = startDate.getFullYear() + "-" + 
-                 String(startDate.getMonth() + 1).padStart(2, '0') + "-" + 
-                 String(startDate.getDate()).padStart(2, '0');
+        // The date portion of an RFC3339 dateTime is already the event's local
+        // calendar day; use it directly rather than re-deriving in server time.
+        timeStr = zonedTimeLabel(new Date(event.start.dateTime));
+        dateStr = event.start.dateTime.split('T')[0];
         if (event.end?.dateTime) {
-          const eDate = new Date(event.end.dateTime);
-          endDateStr = eDate.getFullYear() + "-" + 
-                 String(eDate.getMonth() + 1).padStart(2, '0') + "-" + 
-                 String(eDate.getDate()).padStart(2, '0');
+          endDateStr = event.end.dateTime.split('T')[0];
         }
       }
 
