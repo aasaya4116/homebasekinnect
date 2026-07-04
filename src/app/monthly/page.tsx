@@ -49,11 +49,11 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     const dinners = dayMeals.filter(m => (m.type || 'Dinner').toLowerCase() === 'dinner');
     const lunches = dayMeals.filter(m => (m.type || '').toLowerCase() === 'lunch');
 
+    // Only single-day events live in the cell; multi-day events render as banners.
     const dayEvents = monthlyEvents.filter(evt => {
       if (!evt.date) return false;
-      const eStartD = new Date(evt.date);
-      const eEndD = evt.endDate ? new Date(evt.endDate) : new Date(evt.date);
-      return eStartD <= cellDate && eEndD >= cellDate;
+      if (evt.endDate && evt.endDate > evt.date) return false; // multi-day → banner
+      return evt.date === dateStr;
     });
 
     dayCells.push({
@@ -65,11 +65,63 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
       events: dayEvents,
     });
   }
-  
+
   while (dayCells.length % 7 !== 0) dayCells.push(null);
 
-  const weekCount = dayCells.length / 7;
   const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+  // Chunk into calendar weeks
+  const weeks: (typeof dayCells)[] = [];
+  for (let i = 0; i < dayCells.length; i += 7) weeks.push(dayCells.slice(i, i + 7));
+
+  // Multi-day events (span 2+ days) render as continuous banners across the week.
+  const multiDayEvents = monthlyEvents.filter(e => e.date && e.endDate && e.endDate > e.date);
+
+  type Banner = { key: string; title: string; startCol: number; endCol: number; roundLeft: boolean; roundRight: boolean; lane: number };
+
+  function weekBanners(week: typeof dayCells): Banner[] {
+    const dates = week.map(c => (c ? c.dateStr : null));
+    const segs: Banner[] = [];
+    for (const evt of multiDayEvents) {
+      let minCol = -1, maxCol = -1;
+      for (let i = 0; i < 7; i++) {
+        const d = dates[i];
+        if (d && d >= evt.date! && d <= evt.endDate!) {
+          if (minCol === -1) minCol = i;
+          maxCol = i;
+        }
+      }
+      if (minCol === -1) continue; // event doesn't touch this week
+      segs.push({
+        key: `${evt.id}-${minCol}`,
+        title: evt.title,
+        startCol: minCol,
+        endCol: maxCol,
+        roundLeft: dates[minCol] === evt.date,   // true start (not continued from prev week)
+        roundRight: dates[maxCol] === evt.endDate, // true end
+        lane: 0,
+      });
+    }
+    // Greedy lane assignment so overlapping spans stack instead of colliding.
+    segs.sort((a, b) => a.startCol - b.startCol || (b.endCol - b.startCol) - (a.endCol - a.startCol));
+    const occupied: boolean[][] = [];
+    for (const seg of segs) {
+      let lane = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if (!occupied[lane]) occupied[lane] = new Array(7).fill(false);
+        let free = true;
+        for (let c = seg.startCol; c <= seg.endCol; c++) if (occupied[lane][c]) { free = false; break; }
+        if (free) {
+          for (let c = seg.startCol; c <= seg.endCol; c++) occupied[lane][c] = true;
+          seg.lane = lane;
+          break;
+        }
+        lane++;
+      }
+    }
+    return segs;
+  }
 
   return (
     <div className="dashboard-container">
@@ -87,26 +139,53 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
           </a>
         </div>
 
-        <div className="cal-grid" style={{ gridTemplateRows: `auto repeat(${weekCount}, 1fr)` }}>
+        <div className="cal-headrow">
           {weekdays.map((d) => (
             <div key={d} className="cal-wd">{d}</div>
           ))}
+        </div>
 
-          {dayCells.map((cell, idx) => {
-            if (!cell) return <div key={`pad-${idx}`} className="cal-cell pad" />;
+        <div className="cal-body" style={{ gridTemplateRows: `repeat(${weeks.length}, 1fr)` }}>
+          {weeks.map((week, wi) => {
+            const banners = weekBanners(week);
+            const laneCount = banners.reduce((m, b) => Math.max(m, b.lane + 1), 0);
             return (
-              <div key={cell.dateStr} className={`cal-cell${cell.isToday ? ' today' : ''}`}>
-                <span className="cal-daynum">{cell.dayNum}</span>
+              <div key={wi} className="cal-week">
+                {laneCount > 0 && (
+                  <div className="cal-banners" style={{ gridTemplateRows: `repeat(${laneCount}, auto)` }}>
+                    {banners.map((b) => (
+                      <div
+                        key={b.key}
+                        className={`cal-banner${b.roundLeft ? ' start' : ''}${b.roundRight ? ' end' : ''}`}
+                        style={{ gridColumn: `${b.startCol + 1} / ${b.endCol + 2}`, gridRow: b.lane + 1 }}
+                        title={b.title}
+                      >
+                        {b.title}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                {cell.dinners.map((dinner, di) => (
-                  <div key={`d-${di}`} className="cal-chip dinner" title={dinner.name}>{dinner.name}</div>
-                ))}
-                {cell.lunches.map((lunch, li) => (
-                  <div key={`l-${li}`} className="cal-chip lunch" title={lunch.name}>{lunch.name}</div>
-                ))}
-                {cell.events.map((evt, ei) => (
-                  <div key={`e-${ei}`} className="cal-chip event" title={evt.title}>{evt.title}</div>
-                ))}
+                <div className="cal-days">
+                  {week.map((cell, ci) => {
+                    if (!cell) return <div key={`pad-${wi}-${ci}`} className="cal-cell pad" />;
+                    return (
+                      <div key={cell.dateStr} className={`cal-cell${cell.isToday ? ' today' : ''}`}>
+                        <span className="cal-daynum">{cell.dayNum}</span>
+
+                        {cell.dinners.map((dinner, di) => (
+                          <div key={`d-${di}`} className="cal-chip dinner" title={dinner.name}>{dinner.name}</div>
+                        ))}
+                        {cell.lunches.map((lunch, li) => (
+                          <div key={`l-${li}`} className="cal-chip lunch" title={lunch.name}>{lunch.name}</div>
+                        ))}
+                        {cell.events.map((evt, ei) => (
+                          <div key={`e-${ei}`} className="cal-chip event" title={evt.title}>{evt.title}</div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}

@@ -673,13 +673,57 @@ h1, h2, h3, h4 {
 }
 .cal-nav:active { transform: scale(0.96); }
 
-.cal-grid {
+.cal-headrow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  flex: none;
+  margin-bottom: 6px;
+}
+.cal-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  /* grid-template-rows: repeat(weekCount, 1fr) is set inline so weeks fill height */
+}
+.cal-week {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cal-banners {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  column-gap: 8px;
+  row-gap: 4px;
+  flex: none;
+}
+.cal-banner {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: var(--accent-blue-glow);
+  border: 1px solid var(--accent-blue);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.1;
+  padding: 4px 12px;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-banner.start { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.cal-banner.end   { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+.cal-days {
   flex: 1;
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
-  /* grid-template-rows is set inline from the week count so rows fill height */
 }
 .cal-wd {
   text-align: center;

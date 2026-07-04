@@ -3,6 +3,7 @@ import { buildGroceryList } from './groceryEngine';
 import { google } from 'googleapis';
 import { getGoogleAuth } from './googleAuth';
 import { todayStr, dayStr, dayOfWeek, zonedStartOfDay, zonedEndOfDay, zonedHourFloat } from './dates';
+import { cookForDate } from './cadence';
 
 const auth = getGoogleAuth([
   'https://www.googleapis.com/auth/spreadsheets',
@@ -12,15 +13,7 @@ const auth = getGoogleAuth([
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || '';
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || '';
 
-// ============================================================
-// COOK CADENCE — Who cooks which days
-// ============================================================
-// 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-function getCookForDay(dayOfWeek: number): string {
-  if (dayOfWeek === 1 || dayOfWeek === 2) return "Dad";       // Mon, Tue
-  if (dayOfWeek >= 3 && dayOfWeek <= 5) return "Mom";         // Wed, Thu, Fri
-  return "Both";                                               // Sat, Sun
-}
+// Cook cadence lives in ./cadence (cookForDate): Dad on Mon/Tue/Sat, Mom the rest.
 
 // ============================================================
 // MAIN SCHEDULER — Now generates 30 days by default
@@ -138,7 +131,7 @@ export async function generateSchedule(daysOut: number = 30) {
       }
 
       // Assign cook based on day cadence
-      const cook = getCookForDay(dow);
+      const cook = cookForDate(dateStr);
 
       // RULE 2: Leftover Efficiency
       const yesterday = schedule[i - 1];
@@ -282,7 +275,7 @@ export async function generateSchedule(daysOut: number = 30) {
 
     for (let i = 0; i < daysOut; i++) {
       const dateStr = dayStr(i);
-      const cook = getCookForDay(dayOfWeek(dateStr));
+      const cook = cookForDate(dateStr);
 
       // Preserve only today's/past lunch; regenerate the future.
       const existingLunch = dateStr <= today

@@ -41,7 +41,7 @@ export default function MealSwapModal({
 
   const handleQuickSwap = (quickName: string) => {
     startTransition(async () => {
-      await swapMealAction(dateStr, mealType, quickName, "N/A", "", "Both", "");
+      await swapMealAction(dateStr, mealType, quickName, "N/A", "", "");
       setIsOpen(false);
     });
   };
@@ -54,7 +54,6 @@ export default function MealSwapModal({
         meal.name,
         meal.prepTime || "30 mins",
         meal.ingredients || "",
-        "Both",
         meal.image || ""
       );
       setIsOpen(false);
@@ -64,7 +63,7 @@ export default function MealSwapModal({
   const handleConfirmCustom = () => {
     if (!searchQuery.trim()) return;
     startTransition(async () => {
-      await swapMealAction(dateStr, mealType, searchQuery.trim(), "30 mins", "", "Both", "");
+      await swapMealAction(dateStr, mealType, searchQuery.trim(), "30 mins", "", "");
       setIsOpen(false);
     });
   };

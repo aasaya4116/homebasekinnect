@@ -8,24 +8,17 @@ import { dayStr, dayParts } from "@/lib/dates";
 
 export const revalidate = 1800; // 30 minutes ISR caching
 
-// Cook coding — ONLY system colors: gold = Dad, emerald = Mom, neutral = Both/Family
+// Cook coding — gold = Dad, emerald = Mom. Cadence has no shared "Both" days.
 function cookMeta(cook?: string) {
-  const c = (cook || "Both").toLowerCase();
+  const c = (cook || "").toLowerCase();
   if (c === "dad") return { cls: "cook dad", label: "Dad" };
   if (c === "mom") return { cls: "cook mom", label: "Mom" };
-  if (c === "family") return { cls: "cook both", label: "Family" };
-  return { cls: "cook both", label: "Both" };
+  return { cls: "cook both", label: cook || "—" }; // legacy fallback until re-generated
 }
 
-// Filtering by Dad/Mom must always include shared (Both/Family) meals.
 function cookMatchesFilter(cook: string | undefined, filter: string) {
   if (filter === "all") return true;
-  const c = (cook || "Both").toLowerCase();
-  const shared = c === "both" || c === "family";
-  if (filter === "dad") return c === "dad" || shared;
-  if (filter === "mom") return c === "mom" || shared;
-  if (filter === "both") return shared;
-  return true;
+  return (cook || "").toLowerCase() === filter; // "dad" or "mom"
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ cook?: string }> }) {
@@ -85,7 +78,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     { key: "all", label: "All" },
     { key: "dad", label: "Dad" },
     { key: "mom", label: "Mom" },
-    { key: "both", label: "Both" },
   ];
 
   const weekCap = `${days[0].monthShort} ${days[0].dayNum} – ${days[6].monthShort} ${days[6].dayNum}`;

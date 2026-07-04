@@ -3,6 +3,7 @@
 import { google } from "googleapis";
 import { getGoogleAuth } from "./googleAuth";
 import { generateSchedule } from "./scheduler";
+import { cookForDate } from "./cadence";
 import { revalidatePath } from "next/cache";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1692O1jGvFv-aB00Xy7jU1kH_X0a0eB_E9nL2Q1b1O8c";
@@ -27,10 +28,11 @@ export async function swapMealAction(
   newMealName: string,
   prepTime: string = "N/A",
   ingredients: string = "",
-  cook: string = "Both",
   image: string = ""
 ) {
   try {
+    // The cadence decides who cooks — a swap changes the dish, not the cook.
+    const cook = cookForDate(dateStr);
     const auth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);
     const sheets = google.sheets({ version: "v4", auth });
 
