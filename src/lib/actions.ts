@@ -2,9 +2,24 @@
 
 import { google } from "googleapis";
 import { getGoogleAuth } from "./googleAuth";
+import { generateSchedule } from "./scheduler";
 import { revalidatePath } from "next/cache";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1692O1jGvFv-aB00Xy7jU1kH_X0a0eB_E9nL2Q1b1O8c";
+
+/** Regenerate the rolling month of meals, then refresh the dashboard.
+ *  Returns void so it can be used directly as a <form action>. */
+export async function regenerateAction(): Promise<void> {
+  try {
+    await generateSchedule(30);
+    revalidatePath("/", "layout");
+    revalidatePath("/");
+    revalidatePath("/monthly");
+    revalidatePath("/groceries");
+  } catch (error: any) {
+    console.error("Failed to regenerate schedule:", error);
+  }
+}
 
 export async function swapMealAction(
   dateStr: string,

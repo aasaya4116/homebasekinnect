@@ -3,55 +3,43 @@
 import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 
+type Theme = "dark" | "light";
+
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("homebase-theme") as "dark" | "light" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    }
+    const saved = localStorage.getItem("homebase-theme") as Theme | null;
+    const initial: Theme = saved ?? "dark";
+    setTheme(initial);
+    document.documentElement.setAttribute("data-theme", initial);
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("homebase-theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
+  const apply = (next: Theme) => {
+    setTheme(next);
+    localStorage.setItem("homebase-theme", next);
+    document.documentElement.setAttribute("data-theme", next);
   };
 
+  // Segmented control: the highlighted segment IS the current theme.
   return (
-    <button
-      onClick={toggleTheme}
-      style={{
-        background: 'var(--bg-panel-hover)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '12px',
-        padding: '8px 14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        color: 'var(--text-primary)',
-        cursor: 'pointer',
-        fontSize: '0.8rem',
-        fontWeight: 600,
-        transition: 'all 0.2s ease',
-        boxShadow: 'var(--shadow-widget)'
-      }}
-      title="Toggle Day/Night Sunlight Mode"
-    >
-      {theme === "dark" ? (
-        <>
-          <Sun size={18} color="#f59e0b" />
-          <span>Day Mode</span>
-        </>
-      ) : (
-        <>
-          <Moon size={18} color="#0ea5e9" />
-          <span>Night Mode</span>
-        </>
-      )}
-    </button>
+    <div className="theme-seg" role="group" aria-label="Display theme">
+      <button
+        type="button"
+        className={theme === "light" ? "on" : ""}
+        aria-pressed={theme === "light"}
+        onClick={() => apply("light")}
+      >
+        <Sun size={16} /> Day
+      </button>
+      <button
+        type="button"
+        className={theme === "dark" ? "on" : ""}
+        aria-pressed={theme === "dark"}
+        onClick={() => apply("dark")}
+      >
+        <Moon size={16} /> Night
+      </button>
+    </div>
   );
 }

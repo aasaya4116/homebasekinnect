@@ -1,9 +1,5 @@
 import { getWeeklyMeals, getTodaySchedule, getGroceryList, getRawInventory } from "@/lib/data";
-import { generateSchedule } from "@/lib/scheduler";
-import { revalidatePath } from "next/cache";
-import { Calendar as CalendarIcon, Clock as ClockIcon, Flame, Utensils, Zap, ShoppingCart, RefreshCw, User, ArrowRight } from "lucide-react";
-import Clock from "@/components/Clock";
-import Weather from "@/components/Weather";
+import { Utensils } from "lucide-react";
 import MealSwapModal from "@/components/MealSwapModal";
 import { getSmartMealImage } from "@/lib/mealImages";
 import { getFamilyPhotos } from "@/lib/drivePhotos";
@@ -11,20 +7,24 @@ import FamilyPhotoFrame from "@/components/FamilyPhotoFrame";
 
 export const revalidate = 1800; // 30 minutes ISR caching
 
-const dayColors = [
-  "#0ea5e9", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#ec4899", "#06b6d4",
-];
-
-// Cook badge styles
-function getCookBadge(cook: string) {
-  if (cook === "Dad") return { bg: "rgba(14, 165, 233, 0.15)", color: "#0ea5e9", label: "Dad" };
-  if (cook === "Mom") return { bg: "rgba(236, 72, 153, 0.15)", color: "#ec4899", label: "Mom" };
-  if (cook === "Family") return { bg: "rgba(16, 185, 129, 0.15)", color: "#10b981", label: "Family" };
-  return { bg: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6", label: "Both" };
+// Cook coding — ONLY system colors: gold = Dad, emerald = Mom, neutral = Both/Family
+function cookMeta(cook?: string) {
+  const c = (cook || "Both").toLowerCase();
+  if (c === "dad") return { cls: "cook dad", label: "Dad" };
+  if (c === "mom") return { cls: "cook mom", label: "Mom" };
+  if (c === "family") return { cls: "cook both", label: "Family" };
+  return { cls: "cook both", label: "Both" };
 }
 
-function getMealImage(meal: any, index: number): string {
-  return getSmartMealImage(meal, index);
+// Filtering by Dad/Mom must always include shared (Both/Family) meals.
+function cookMatchesFilter(cook: string | undefined, filter: string) {
+  if (filter === "all") return true;
+  const c = (cook || "Both").toLowerCase();
+  const shared = c === "both" || c === "family";
+  if (filter === "dad") return c === "dad" || shared;
+  if (filter === "mom") return c === "mom" || shared;
+  if (filter === "both") return shared;
+  return true;
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ cook?: string }> }) {
@@ -42,350 +42,285 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const days = Array.from({ length: daysCount }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    const dayNameShort = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    const dayNameShort = d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
     const dayNum = d.getDate();
-    const monthShort = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+    const monthShort = d.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
 
-    const targetDateStr = d.getFullYear() + "-" + 
-                          String(d.getMonth() + 1).padStart(2, '0') + "-" + 
-                          String(d.getDate()).padStart(2, '0');
+    const targetDateStr =
+      d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 
-    const dayMeals = allMeals.filter(m => {
+    const dayMeals = allMeals.filter((m) => {
       if (!m.date || m.date === "Unknown Date") return false;
-      const normalizedDateStr = m.date.replace(/-/g, '/');
+      const normalizedDateStr = m.date.replace(/-/g, "/");
       const mDate = new Date(normalizedDateStr);
       return mDate.getDate() === d.getDate() && mDate.getMonth() === d.getMonth() && mDate.getFullYear() === d.getFullYear();
     });
 
-    const lunch = dayMeals.find(m => (m.type || '').toLowerCase() === 'lunch') || null;
-    const dinner = dayMeals.find(m => (m.type || 'Dinner').toLowerCase() === 'dinner') || null;
+    const lunch = dayMeals.find((m) => (m.type || "").toLowerCase() === "lunch") || null;
+    const dinner = dayMeals.find((m) => (m.type || "Dinner").toLowerCase() === "dinner") || null;
 
-    return {
-      index: i,
-      dayNameShort, dayNum, monthShort, 
-      lunch, dinner,
-      color: dayColors[i % dayColors.length],
-      isToday: i === 0,
-      targetDateStr,
-    };
+    return { index: i, dayNameShort, dayNum, monthShort, lunch, dinner, isToday: i === 0, targetDateStr };
   });
 
-  const filteredDays = cookFilter === "all" 
-    ? days 
-    : days.filter(d => 
-        (d.dinner && d.dinner.cook?.toLowerCase() === cookFilter.toLowerCase()) || 
-        (d.lunch && d.lunch.cook?.toLowerCase() === cookFilter.toLowerCase())
-      );
+  const filteredDays =
+    cookFilter === "all"
+      ? days
+      : days.filter(
+          (d) =>
+            (d.dinner && cookMatchesFilter(d.dinner.cook, cookFilter)) ||
+            (d.lunch && cookMatchesFilter(d.lunch.cook, cookFilter))
+        );
 
   const todaysDinner = days[0].dinner;
   const tomorrowsDinner = days.length > 1 ? days[1].dinner : null;
   const todaysLunch = days[0].lunch;
 
-  const toBuyCount = groceryItems.filter(i => i.status === "To Buy").length;
-  const restockCount = groceryItems.filter(i => i.status === "Restock").length;
-  const groceryCategories = [...new Set(groceryItems.map(i => i.category))];
+  const toBuyCount = groceryItems.filter((i) => i.status === "To Buy").length;
+  const restockCount = groceryItems.filter((i) => i.status === "Restock").length;
 
-  async function handleGenerate() {
-    "use server";
-    try {
-      await generateSchedule(30); // Generate a full month
-      revalidatePath("/");
-    } catch (error) {
-      console.error("Failed to generate schedule:", error);
-    }
-  }
+  // Grocery preview — real item names, not a lone number.
+  const previewSource = (toBuyCount > 0 ? groceryItems.filter((i) => i.status === "To Buy") : groceryItems);
+  const previewNames = previewSource.slice(0, 6).map((i) => i.ingredient);
+  const previewRemaining = previewSource.length - previewNames.length;
+  const groceryPreview =
+    previewNames.join(" · ") + (previewRemaining > 0 ? ` · +${previewRemaining} more` : "");
+
+  // Week filter segmented control
+  const filterOpts = [
+    { key: "all", label: "All" },
+    { key: "dad", label: "Dad" },
+    { key: "mom", label: "Mom" },
+    { key: "both", label: "Both" },
+  ];
+
+  const weekCap = `${days[0].monthShort} ${days[0].dayNum} – ${days[6].monthShort} ${days[6].dayNum}`;
 
   return (
     <div className="dashboard-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <Clock />
-          <Weather />
-        </div>
-        <form action={handleGenerate} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button type="submit" className="btn-primary" style={{ fontSize: '0.9rem', padding: '12px 20px', opacity: 0.8 }}>
-            <CalendarIcon size={16} style={{ marginRight: '8px' }}/>
-            Regenerate
-          </button>
-        </form>
-      </div>
-
-      {/* TOP SECTION: Hero + Quick Info (Grid) */}
-      <div className="hero-row">
-        {/* HERO WIDGET (2.5fr) */}
-        <div className="widget" style={{ padding: 0, overflow: 'hidden' }}>
-          {todaysDinner && todaysDinner.name !== 'No meal scheduled' ? (
-            <div style={{ padding: '0.85rem 1rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, height: '100%' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <span className="widget-badge" style={{ background: 'var(--accent-orange-glow)', color: 'var(--accent-orange)', fontSize: '0.75rem' }}>
-                    🍽️ TONIGHT'S DINNER
-                  </span>
+      {/* ===== HERO BAND (Mock B: Tonight card + 2 minis + Memories) ===== */}
+      <section className="hero-row">
+        {/* TONIGHT (dinner hero + lunch row) */}
+        <article className="widget tonight">
+          {todaysDinner && todaysDinner.name !== "No meal scheduled" ? (
+            <>
+              <div className="tonight-body">
+                <div className="ovl-row">
+                  <span className="ovl">Tonight&rsquo;s Dinner</span>
                   {todaysDinner.cook && (
-                    <span className="widget-badge" style={{ background: getCookBadge(todaysDinner.cook).bg, color: getCookBadge(todaysDinner.cook).color, fontSize: '0.75rem' }}>
-                      <User size={12} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '3px' }}/> 
-                      {getCookBadge(todaysDinner.cook).label}
-                    </span>
+                    <span className={cookMeta(todaysDinner.cook).cls}>{cookMeta(todaysDinner.cook).label}</span>
                   )}
                 </div>
-                <h2 style={{ fontSize: '1.8rem', margin: '0 0 0.5rem 0', lineHeight: 1.15, fontWeight: 700 }}>
-                  {todaysDinner.name}
-                </h2>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-                  <span className="dinner-meta-chip" style={{ fontSize: '1rem' }}>
-                    <ClockIcon size={16} color="var(--accent-blue)"/> {todaysDinner.prepTime}
-                  </span>
+
+                <h2 className="hero-title">{todaysDinner.name}</h2>
+
+                <div className="hero-meta">
+                  <span>{todaysDinner.prepTime}</span>
                   <MealSwapModal
                     dateStr={days[0].targetDateStr}
                     mealType="Dinner"
                     currentMealName={todaysDinner.name}
                     inventory={rawInventory}
-                    label="Swap Dinner 🔄"
-                    buttonStyle={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    label="Swap dinner"
+                    buttonStyle={{
+                      background: "var(--gold-fill)",
+                      color: "var(--gold-ink)",
+                      border: "none",
+                      borderRadius: "999px",
+                      padding: "9px 20px",
+                      fontSize: "0.95rem",
+                    }}
                   />
                 </div>
-                {tomorrowsDinner && tomorrowsDinner.name !== 'No meal scheduled' && (
-                  <div style={{ 
-                    display: 'flex', alignItems: 'center', gap: '10px', 
-                    padding: '10px 16px', borderRadius: '12px',
-                    background: 'var(--bg-panel-hover)', 
-                    border: '1px solid var(--border-color)',
-                    marginTop: 'auto',
-                  }}>
-                    <ArrowRight size={14} color="var(--text-tertiary)"/>
-                    <span style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-                      Tomorrow:
+
+                {/* Lunch rides along inside the Tonight card */}
+                <div className="hero-lunch">
+                  <span className="ovl grn">Lunch</span>
+                  {todaysLunch ? (
+                    <>
+                      <span className="nm">{todaysLunch.name}</span>
+                      {todaysLunch.cook && (
+                        <span className={cookMeta(todaysLunch.cook).cls}>{cookMeta(todaysLunch.cook).label}</span>
+                      )}
+                      <span className="mt">{todaysLunch.prepTime}</span>
+                    </>
+                  ) : (
+                    <span className="nm" style={{ color: "var(--text-tertiary)" }}>
+                      Not scheduled
                     </span>
-                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                      {tomorrowsDinner.name}
-                    </span>
-                    <span className="widget-badge" style={{ 
-                      background: getCookBadge(tomorrowsDinner.cook || "Both").bg, 
-                      color: getCookBadge(tomorrowsDinner.cook || "Both").color,
-                      fontSize: '0.7rem', padding: '3px 8px',
-                    }}>
-                      {getCookBadge(tomorrowsDinner.cook || "Both").label}
-                    </span>
+                  )}
+                </div>
+
+                {tomorrowsDinner && tomorrowsDinner.name !== "No meal scheduled" && (
+                  <div className="hero-tmrw">
+                    Tomorrow — <b>{tomorrowsDinner.name}</b>
+                    <span className={cookMeta(tomorrowsDinner.cook).cls}>{cookMeta(tomorrowsDinner.cook).label}</span>
                   </div>
                 )}
               </div>
-              <img 
-                src={getMealImage(todaysDinner, 0)} 
-                alt={todaysDinner.name} 
-                style={{ 
-                  width: '200px', 
-                  height: '100%', 
-                  borderRadius: '16px', 
-                  objectFit: 'cover', 
-                  border: '1px solid var(--border-color)',
-                  flexShrink: 0
-                }}
-              />
-            </div>
+
+              <div className="tonight-photo">
+                <img src={getSmartMealImage(todaysDinner, 0)} alt={todaysDinner.name} />
+              </div>
+            </>
           ) : (
-            <div className="empty-state" style={{ height: '100%' }}>
+            <div className="empty-state">
               <Utensils size={40} />
-              <span style={{ fontSize: '1.2rem', fontWeight: 600 }}>No Dinner Scheduled</span>
-              <span style={{ fontSize: '0.85rem' }}>Click Regenerate to generate your month</span>
+              <span style={{ fontSize: "1.2rem", fontWeight: 600 }}>No dinner scheduled</span>
+              <span style={{ fontSize: "0.9rem" }}>Tap Regenerate to plan the month</span>
             </div>
           )}
-        </div>
+        </article>
 
-        {/* LUNCH WIDGET (1fr) */}
-        <div className="widget" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
-            <div className="widget-title">
-              <Utensils size={15} color="var(--accent-green)"/>
-              Today's Lunch
-            </div>
-            <MealSwapModal
-              dateStr={days[0].targetDateStr}
-              mealType="Lunch"
-              currentMealName={todaysLunch?.name || "None"}
-              inventory={rawInventory}
-              label="🔄"
-            />
-          </div>
-          {todaysLunch ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, justifyContent: 'center' }}>
-              <span className="meal-type-badge lunch" style={{ fontSize: '0.65rem', width: 'fit-content' }}>🥗 LUNCH</span>
-              <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{todaysLunch.name}</div>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: 'auto' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}><ClockIcon size={14} style={{ display: 'inline', marginRight: '4px' }}/>{todaysLunch.prepTime}</span>
-                {todaysLunch.cook && (
-                   <span style={{
-                    fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px',
-                    background: getCookBadge(todaysLunch.cook).bg, color: getCookBadge(todaysLunch.cook).color
-                  }}>
-                    {getCookBadge(todaysLunch.cook).label}
-                  </span>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="empty-state" style={{ height: '100%' }}>No lunch scheduled today</div>
-          )}
-        </div>
-
-        {/* SCHEDULE WIDGET (1fr) */}
-        <div className="widget" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
-            <div className="widget-title">
-              <CalendarIcon size={15} color="var(--accent-blue)"/>
-              Tonight's Schedule
-            </div>
-            <span className="widget-badge" style={{ background: 'var(--accent-blue-glow)', color: 'var(--accent-blue)' }}>
-              {schedule.length} Event{schedule.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-          {schedule.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1, overflow: 'hidden' }}>
-              {schedule.slice(0, 3).map((event, i) => (
-                <div key={i} className="event-row" style={{ padding: '0.35rem 0' }}>
-                  <div className="event-dot" style={{ backgroundColor: event.color, boxShadow: `0 0 8px ${event.color}40`, height: '20px' }} />
-                  <div style={{ overflow: 'hidden' }}>
-                    <div className="event-title" style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</div>
-                    <div className="event-time" style={{ fontSize: '0.75rem' }}><ClockIcon size={12}/> {event.time}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state" style={{ height: '100%' }}>No evening events tonight</div>
-          )}
-        </div>
-
-        {/* GROCERY WIDGET (1fr) */}
-        <div className="widget" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div className="widget-header" style={{ marginBottom: '0.5rem' }}>
-            <div className="widget-title">
-              <ShoppingCart size={15} color="var(--accent-green)"/>
-              Grocery List
-            </div>
-            <span className="widget-badge" style={{ background: 'var(--accent-green-glow)', color: 'var(--accent-green)' }}>
-              {toBuyCount + restockCount} Items
-            </span>
-          </div>
-          {groceryItems.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <div style={{ fontSize: '2.2rem', color: 'var(--accent-blue)', fontWeight: 700, lineHeight: 1 }}>
-                {toBuyCount}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>To Buy</div>
-              
-              {restockCount > 0 && (
-                <div style={{ fontSize: '0.85rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem' }}>
-                  <RefreshCw size={14}/> {restockCount} Restock Items
-                </div>
+        {/* MIDDLE COLUMN — two stacked minis */}
+        <div className="trio2">
+          {/* This Evening */}
+          <article className="widget mini">
+            <div className="mini-top">
+              <span className="ovl">This Evening</span>
+              {schedule.length > 0 ? (
+                <span className="chip gld">
+                  {schedule.length} event{schedule.length !== 1 ? "s" : ""}
+                </span>
+              ) : (
+                <span className="chip grn">Free</span>
               )}
             </div>
-          ) : (
-            <div className="empty-state" style={{ height: '100%' }}>Schedule meals to generate list</div>
-          )}
+            {schedule.length > 0 ? (
+              <>
+                <div className="mini-val">
+                  <span className="t">{schedule[0].title}</span>
+                </div>
+                <div className="mini-sub">
+                  {schedule[0].time}
+                  {schedule.length > 1 ? ` · +${schedule.length - 1} more` : ""}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mini-val">
+                  <span className="dot-em" />
+                  Evening free
+                </div>
+                <div className="mini-sub">Nothing on the calendar after 5 pm</div>
+              </>
+            )}
+          </article>
+
+          {/* Groceries */}
+          <article className="widget mini">
+            <div className="mini-top">
+              <span className="ovl">Groceries</span>
+              {groceryItems.length > 0 && (
+                <span className="chip gld">{toBuyCount + restockCount} items</span>
+              )}
+            </div>
+            {groceryItems.length > 0 ? (
+              <>
+                <div className="mini-val">
+                  <span className="t">{toBuyCount > 0 ? "Ready to shop" : "All stocked"}</span>
+                </div>
+                <div className="mini-sub">{groceryPreview}</div>
+              </>
+            ) : (
+              <>
+                <div className="mini-val">
+                  <span className="t">List empty</span>
+                </div>
+                <div className="mini-sub">Schedule meals to generate the list</div>
+              </>
+            )}
+          </article>
         </div>
 
-        {/* FAMILY PHOTO FRAME WIDGET (1.2fr) */}
+        {/* MEMORIES — full-bleed photo + scrim */}
         <FamilyPhotoFrame photos={familyPhotos} />
-      </div>
+      </section>
 
-      {/* BOTTOM SECTION: 7-Day Grid */}
-      <div className="widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.75rem', minHeight: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexShrink: 0 }}>
-          <div className="widget-title" style={{ fontSize: '1rem' }}>
-            <Zap size={18} color="var(--accent-green)"/>
-            The Week Ahead
-          </div>
-          <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-panel-hover)', borderRadius: '10px', padding: '4px' }}>
-            {[
-              { key: "all", label: "All" },
-              { key: "dad", label: "Dad", color: "#0ea5e9" },
-              { key: "mom", label: "Mom", color: "#ec4899" },
-            ].map(opt => (
-              <a key={opt.key} href={`/?cook=${opt.key}`} style={{
-                fontSize: '0.85rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
-                textDecoration: 'none',
-                background: cookFilter === opt.key ? (opt.color || 'var(--accent-blue)') : 'transparent',
-                color: cookFilter === opt.key ? '#fff' : 'var(--text-tertiary)',
-                transition: 'all 0.2s',
-              }}>
+      {/* ===== WEEK BAND ===== */}
+      <section className="week-band">
+        <div className="week-head">
+          <span className="ovl">The Week Ahead</span>
+          <div className="seg">
+            {filterOpts.map((opt) => (
+              <a key={opt.key} href={opt.key === "all" ? "/" : `/?cook=${opt.key}`} className={cookFilter === opt.key ? "on" : ""}>
                 {opt.label}
               </a>
             ))}
           </div>
+          <span className="week-cap">{weekCap}</span>
         </div>
-        
-        <div className="week-meals-grid" style={{ minHeight: 0 }}>
-          {filteredDays.map((day, idx) => (
-            <div key={idx} className="day-card" style={{ padding: '0.65rem', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div className="day-card-header" style={{ marginBottom: '0.4rem', paddingBottom: '0.4rem', flexShrink: 0 }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {day.dayNameShort}
-                  </div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 300, color: day.isToday ? 'var(--accent-blue)' : 'var(--text-primary)', lineHeight: 1 }}>
-                    {day.dayNum}
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: day.isToday ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                  {day.isToday ? 'Today' : day.monthShort}
-                </div>
+
+        <div
+          className="days"
+          style={{ gridTemplateColumns: `repeat(${Math.max(filteredDays.length, 1)}, 1fr)` }}
+        >
+          {filteredDays.map((day) => (
+            <div key={day.targetDateStr} className={`day${day.isToday ? " today" : ""}`}>
+              <div className="day-h">
+                <span className="dw">{day.dayNameShort}</span>
+                <span className="dn">{day.dayNum}</span>
+                {day.isToday && <span className="today-tag">Today</span>}
               </div>
-              
-              <div className="day-card-meals" style={{ gap: '0.8rem', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', marginTop: '0.6rem' }}>
-                {day.lunch ? (
-                  <div className="day-meal-block" style={{ padding: '0.8rem', flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="meal-type-badge lunch" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>🥗 LUNCH</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}><ClockIcon size={11} style={{ display: 'inline' }}/> {day.lunch.prepTime}</span>
-                        <MealSwapModal dateStr={day.targetDateStr} mealType="Lunch" currentMealName={day.lunch.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
-                      </div>
+
+              {/* Lunch */}
+              {day.lunch ? (
+                <div className="meal">
+                  <div className="m-top">
+                    <span className="m-lab lun">Lunch</span>
+                    <span className="m-time">{day.lunch.prepTime}</span>
+                    <MealSwapModal
+                      dateStr={day.targetDateStr}
+                      mealType="Lunch"
+                      currentMealName={day.lunch.name}
+                      inventory={rawInventory}
+                      label=""
+                      buttonStyle={{ background: "transparent", border: "none", color: "var(--text-tertiary)", padding: "2px 4px" }}
+                    />
+                  </div>
+                  <div className="m-name">{day.lunch.name}</div>
+                  {day.lunch.cook && (
+                    <div className="m-cook">
+                      <span className={cookMeta(day.lunch.cook).cls}>{cookMeta(day.lunch.cook).label}</span>
                     </div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 600, lineHeight: 1.3, wordBreak: 'break-word', color: 'var(--text-primary)' }}>{day.lunch.name}</div>
-                    {day.lunch.cook && (
-                      <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', width: 'fit-content',
-                        background: getCookBadge(day.lunch.cook).bg, color: getCookBadge(day.lunch.cook).color
-                      }}>
-                        {getCookBadge(day.lunch.cook).label}
-                      </span>
-                    )}
+                  )}
+                </div>
+              ) : (
+                <div className="meal empty">
+                  <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>No lunch</span>
+                </div>
+              )}
+
+              {/* Dinner */}
+              {day.dinner ? (
+                <div className="meal">
+                  <div className="m-top">
+                    <span className="m-lab din">Dinner</span>
+                    <span className="m-time">{day.dinner.prepTime}</span>
+                    <MealSwapModal
+                      dateStr={day.targetDateStr}
+                      mealType="Dinner"
+                      currentMealName={day.dinner.name}
+                      inventory={rawInventory}
+                      label=""
+                      buttonStyle={{ background: "transparent", border: "none", color: "var(--text-tertiary)", padding: "2px 4px" }}
+                    />
                   </div>
-                ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.8rem', flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Lunch</span>
-                  </div>
-                )}
-                
-                {day.dinner ? (
-                  <div className="day-meal-block" style={{ borderColor: 'var(--border-subtle)', padding: '0.8rem', flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span className="meal-type-badge dinner" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>🍽️ DINNER</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}><ClockIcon size={11} style={{ display: 'inline' }}/> {day.dinner.prepTime}</span>
-                        <MealSwapModal dateStr={day.targetDateStr} mealType="Dinner" currentMealName={day.dinner.name} inventory={rawInventory} label="🔄" buttonStyle={{ padding: '2px 4px' }} />
-                      </div>
+                  <div className="m-name">{day.dinner.name}</div>
+                  {day.dinner.cook && (
+                    <div className="m-cook">
+                      <span className={cookMeta(day.dinner.cook).cls}>{cookMeta(day.dinner.cook).label}</span>
                     </div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.3, wordBreak: 'break-word', color: 'var(--text-primary)' }}>{day.dinner.name}</div>
-                    {day.dinner.cook && (
-                      <span style={{
-                        fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', width: 'fit-content',
-                        background: getCookBadge(day.dinner.cook).bg, color: getCookBadge(day.dinner.cook).color
-                      }}>
-                        {getCookBadge(day.dinner.cook).label}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="day-meal-block" style={{ borderStyle: 'dashed', background: 'transparent', opacity: 0.5, padding: '0.8rem', flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>No Dinner</span>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                <div className="meal empty">
+                  <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>No dinner</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

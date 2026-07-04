@@ -77,12 +77,12 @@ export default function MealSwapModal({
           setIsOpen(true);
         }}
         style={{
-          background: 'rgba(14, 165, 233, 0.15)',
-          color: 'var(--accent-blue)',
-          border: '1px solid rgba(14, 165, 233, 0.3)',
-          borderRadius: '8px',
-          padding: '4px 8px',
-          fontSize: '0.7rem',
+          background: 'var(--gold-dim)',
+          color: 'var(--gold)',
+          border: '1px solid transparent',
+          borderRadius: '999px',
+          padding: '4px 10px',
+          fontSize: '0.72rem',
           fontWeight: 700,
           display: 'inline-flex',
           alignItems: 'center',
@@ -94,7 +94,7 @@ export default function MealSwapModal({
         title="We Ate Something Else — Swap Dish"
       >
         <RefreshCw size={12} />
-        <span>{label}</span>
+        {label ? <span>{label}</span> : null}
       </button>
 
       {isOpen && (
@@ -260,7 +260,7 @@ export default function MealSwapModal({
                     justifyContent: 'space-between',
                     transition: 'all 0.15s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-blue)'}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--gold)'}
                   onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
                 >
                   <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '4px' }}>
@@ -268,7 +268,7 @@ export default function MealSwapModal({
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', display: 'flex', justifyContent: 'space-between' }}>
                     <span>⏱️ {meal.prepTime || "30m"}</span>
-                    <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>Select →</span>
+                    <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Select →</span>
                   </div>
                 </div>
               ))}
@@ -281,7 +281,7 @@ export default function MealSwapModal({
 
             {/* Footer / Status */}
             {isPending && (
-              <div style={{ textAlign: 'center', padding: '8px', fontSize: '0.85rem', color: 'var(--accent-blue)', fontWeight: 600 }}>
+              <div style={{ textAlign: 'center', padding: '8px', fontSize: '0.85rem', color: 'var(--gold)', fontWeight: 600 }}>
                 ⏳ Syncing change with Google Sheets...
               </div>
             )}

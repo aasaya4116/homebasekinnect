@@ -30,6 +30,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable}`}>
       <body>
+        {/* Apply saved theme before paint to avoid a dark flash for light-mode users */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('homebase-theme');if(t){document.documentElement.setAttribute('data-theme',t);}}catch(e){}",
+          }}
+        />
         <AutoRefresh intervalMs={5 * 60 * 1000} />
         <div className="container">
           <Navigation />

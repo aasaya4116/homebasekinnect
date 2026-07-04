@@ -81,7 +81,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
             <ChevronLeft size={14} />
           </a>
           <div className="widget-title" style={{ margin: 0 }}>
-            <CalendarIcon size={13} color="var(--accent-blue)" />
+            <CalendarIcon size={13} color="var(--gold)" />
             {monthName}
           </div>
           <a href={`/monthly?month=${nextMonth}&year=${nextYear}`} className="btn-primary" style={{ fontSize: '0.7rem', padding: '8px 14px' }}>
@@ -107,13 +107,13 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
                     background: 'var(--bg-panel-hover)',
                     borderRadius: '8px',
                     padding: '6px',
-                    border: cell.isToday ? '1px solid var(--accent-blue)' : '1px solid var(--border-color)',
+                    border: cell.isToday ? '1.5px solid var(--gold)' : '1px solid var(--border-color)',
                     minHeight: '80px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
                   }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: cell.isToday ? 'var(--accent-blue)' : 'var(--text-primary)', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: cell.isToday ? 'var(--gold)' : 'var(--text-primary)', marginBottom: '2px' }}>
                       {cell.dayNum}
                     </span>
                     

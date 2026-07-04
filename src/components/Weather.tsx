@@ -102,7 +102,7 @@ export default function Weather() {
       {error || !weather ? (
         <span
           style={{
-            fontSize: "0.9rem",
+            fontSize: "1.1rem",
             color: "var(--text-secondary)",
           }}
         >
@@ -110,22 +110,22 @@ export default function Weather() {
         </span>
       ) : (
         <>
-          <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>
+          <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>
             {weather.emoji}
           </span>
           <span
             style={{
-              fontSize: "0.9rem",
-              fontWeight: 600,
+              fontSize: "1.2rem",
+              fontWeight: 650,
               color: "var(--text-primary)",
             }}
           >
-            {weather.tempF}°F
+            {weather.tempF}°
           </span>
           <span
             style={{
-              fontSize: "0.75rem",
-              fontWeight: 400,
+              fontSize: "1rem",
+              fontWeight: 500,
               color: "var(--text-secondary)",
             }}
           >

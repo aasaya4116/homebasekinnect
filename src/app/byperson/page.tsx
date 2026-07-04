@@ -5,14 +5,14 @@ export default async function ByPerson() {
   const events = await getFullDaySchedule();
 
   const familyMembers = [
-    { name: "Dad", role: "Parent", color: "var(--accent-blue)" },
-    { name: "Mom", role: "Parent", color: "var(--accent-orange)" },
-    { name: "Mekhi", role: "Kid", color: "var(--accent-green)" },
-    { name: "Khalil", role: "Kid", color: "var(--accent-purple)" },
+    { name: "Dad", role: "Parent", color: "var(--gold)" },
+    { name: "Mom", role: "Parent", color: "var(--em)" },
+    { name: "Mekhi", role: "Kid", color: "var(--accent-blue)" },
+    { name: "Khalil", role: "Kid", color: "var(--text-tertiary)" },
   ];
 
   return (
-    <div style={{ padding: '0 2rem 2rem' }}>
+    <div style={{ padding: '0 2rem 2rem', flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2.5rem', margin: 0, fontWeight: 700, letterSpacing: '-0.02em' }}>By Person</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Individual schedules for Today</p>

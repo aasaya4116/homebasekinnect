@@ -17,26 +17,26 @@ export default async function Groceries() {
   const toBuyCount = items.filter(i => i.status === "To Buy").length;
   const restockCount = items.filter(i => i.status === "Restock").length;
 
-  // Category icon colors
+  // Category icon colors — system palette only (no purple/pink/cyan)
   const categoryColors: Record<string, string> = {
-    "Produce": "#10b981",
-    "Meat & Seafood": "#ef4444",
-    "Dairy": "#0ea5e9",
-    "Grains & Carbs": "#f59e0b",
-    "Canned & Jarred": "#8b5cf6",
-    "Spices & Seasonings": "#ec4899",
-    "Frozen": "#06b6d4",
-    "Other": "#6b7280",
+    "Produce": "#10b981",          // emerald
+    "Meat & Seafood": "#ef4444",   // danger red
+    "Dairy": "#0ea5e9",            // info blue
+    "Grains & Carbs": "#c8a96e",   // gold
+    "Canned & Jarred": "#0b7a57",  // deep emerald
+    "Spices & Seasonings": "#f59e0b", // warning amber
+    "Frozen": "#0ea5e9",           // info blue
+    "Other": "#6a6a72",            // neutral
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 0.25rem 1rem' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h1 style={{ fontSize: '2rem', margin: 0, fontWeight: 700, letterSpacing: '-0.02em' }}>
-            <ShoppingCart size={24} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '10px', color: 'var(--accent-blue)' }}/>
+            <ShoppingCart size={24} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '10px', color: 'var(--gold)' }}/>
             Grocery List
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
