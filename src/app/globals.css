@@ -98,6 +98,12 @@ body {
   height: 100%;
 }
 
+/* Kiosk zoom: rem-based type scales from here; layout grid is vh/fr so it
+   holds position. Nudge this down to shrink all text proportionally. */
+html {
+  font-size: 15px;
+}
+
 body {
   background-color: var(--bg-color);
   color: var(--text-primary);
