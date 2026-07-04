@@ -5,6 +5,7 @@ import { getSmartMealImage } from "@/lib/mealImages";
 import { getFamilyPhotos } from "@/lib/drivePhotos";
 import FamilyPhotoFrame from "@/components/FamilyPhotoFrame";
 import { dayStr, dayParts } from "@/lib/dates";
+import { cookForDate } from "@/lib/cadence";
 
 export const revalidate = 1800; // 30 minutes ISR caching
 
@@ -54,9 +55,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     cookFilter === "all"
       ? days
       : days.filter(
-          (d) =>
-            (d.dinner && cookMatchesFilter(d.dinner.cook, cookFilter)) ||
-            (d.lunch && cookMatchesFilter(d.lunch.cook, cookFilter))
+          (d) => (d.dinner || d.lunch) && cookMatchesFilter(cookForDate(d.targetDateStr), cookFilter)
         );
 
   const todaysDinner = days[0].dinner;
@@ -93,9 +92,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               <div className="tonight-body">
                 <div className="ovl-row">
                   <span className="ovl">Tonight&rsquo;s Dinner</span>
-                  {todaysDinner.cook && (
-                    <span className={cookMeta(todaysDinner.cook).cls}>{cookMeta(todaysDinner.cook).label}</span>
-                  )}
+                  <span className={cookMeta(cookForDate(days[0].targetDateStr)).cls}>{cookMeta(cookForDate(days[0].targetDateStr)).label}</span>
                 </div>
 
                 <h2 className="hero-title">{todaysDinner.name}</h2>
@@ -125,9 +122,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   {todaysLunch ? (
                     <>
                       <span className="nm">{todaysLunch.name}</span>
-                      {todaysLunch.cook && (
-                        <span className={cookMeta(todaysLunch.cook).cls}>{cookMeta(todaysLunch.cook).label}</span>
-                      )}
+                      <span className={cookMeta(cookForDate(days[0].targetDateStr)).cls}>{cookMeta(cookForDate(days[0].targetDateStr)).label}</span>
                       <span className="mt">{todaysLunch.prepTime}</span>
                     </>
                   ) : (
@@ -140,7 +135,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                 {tomorrowsDinner && tomorrowsDinner.name !== "No meal scheduled" && (
                   <div className="hero-tmrw">
                     Tomorrow — <b>{tomorrowsDinner.name}</b>
-                    <span className={cookMeta(tomorrowsDinner.cook).cls}>{cookMeta(tomorrowsDinner.cook).label}</span>
+                    <span className={cookMeta(cookForDate(days[1].targetDateStr)).cls}>{cookMeta(cookForDate(days[1].targetDateStr)).label}</span>
                   </div>
                 )}
               </div>
@@ -265,11 +260,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     />
                   </div>
                   <div className="m-name">{day.lunch.name}</div>
-                  {day.lunch.cook && (
-                    <div className="m-cook">
-                      <span className={cookMeta(day.lunch.cook).cls}>{cookMeta(day.lunch.cook).label}</span>
-                    </div>
-                  )}
+                  <div className="m-cook">
+                    <span className={cookMeta(cookForDate(day.targetDateStr)).cls}>{cookMeta(cookForDate(day.targetDateStr)).label}</span>
+                  </div>
                 </div>
               ) : (
                 <div className="meal empty">
@@ -293,11 +286,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     />
                   </div>
                   <div className="m-name">{day.dinner.name}</div>
-                  {day.dinner.cook && (
-                    <div className="m-cook">
-                      <span className={cookMeta(day.dinner.cook).cls}>{cookMeta(day.dinner.cook).label}</span>
-                    </div>
-                  )}
+                  <div className="m-cook">
+                    <span className={cookMeta(cookForDate(day.targetDateStr)).cls}>{cookMeta(cookForDate(day.targetDateStr)).label}</span>
+                  </div>
                 </div>
               ) : (
                 <div className="meal empty">
