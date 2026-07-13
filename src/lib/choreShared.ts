@@ -26,6 +26,8 @@ export type KidBoard = {
   totalScheduled: number;
   earnedToday: number;
   earnedWeek: number;     // since the most recent Sunday
+  weekDone: number;       // scheduled chores done Sun → today (as-needed = bonus, not counted)
+  weekTotal: number;      // scheduled chores due Sun → today
 };
 
 // Display order for time-of-day groups on the board.

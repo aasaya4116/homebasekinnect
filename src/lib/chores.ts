@@ -148,6 +148,18 @@ export function weekStart(dateStr: string): string {
   return anchor.toISOString().slice(0, 10);
 }
 
+/** Every calendar date from `start` to `end` inclusive (YYYY-MM-DD strings). */
+function datesFromTo(start: string, end: string): string[] {
+  const out: string[] = [];
+  const d = new Date(`${start}T12:00:00Z`);
+  const stop = new Date(`${end}T12:00:00Z`);
+  while (d <= stop) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out;
+}
+
 // ------------------------------------------------------------
 // The board — everything the kiosk page needs for one day.
 // Kids appear in the order they first appear in the Chores tab.
@@ -183,6 +195,19 @@ export async function getChoreBoards(dateStr: string): Promise<KidBoard[]> {
       if (s.date >= wkStart && s.date <= dateStr) earnedWeek += s.value;
     }
 
+    // Week tally: how many scheduled chores were due Sun → today, and how
+    // many got done. As-needed chores earn money but don't count against
+    // the tally — you can't miss a chore nobody asked for.
+    let weekDone = 0;
+    let weekTotal = 0;
+    for (const d of datesFromTo(wkStart, dateStr)) {
+      for (const def of mine) {
+        if (!isDueOn(def.days, d)) continue;
+        weekTotal++;
+        if (states.get(`${d}|${def.id}`)?.done) weekDone++;
+      }
+    }
+
     return {
       kid,
       scheduled,
@@ -191,6 +216,8 @@ export async function getChoreBoards(dateStr: string): Promise<KidBoard[]> {
       totalScheduled: scheduled.length,
       earnedToday,
       earnedWeek,
+      weekDone,
+      weekTotal,
     };
   });
 }
