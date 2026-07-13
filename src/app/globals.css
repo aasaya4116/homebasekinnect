@@ -421,22 +421,23 @@ h1, h2, h3, h4 {
 /* ---- Middle column: two stacked mini cards ---- */
 .trio2 {
   display: grid;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: repeat(3, 1fr); /* Evening · Groceries · Chores */
   gap: 12px;
   min-width: 0;
 }
 .mini {
-  padding: 16px 20px;
+  padding: 12px 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 6px;
   min-width: 0;
+  overflow: hidden;
 }
 .mini-top { display: flex; align-items: center; gap: 10px; }
 .mini-top .chip, .mini-top .cook { margin-left: auto; }
 .mini-val {
-  font-size: 1.6rem;
+  font-size: 1.45rem;
   font-weight: 650;
   letter-spacing: -0.015em;
   line-height: 1.15;
@@ -451,7 +452,7 @@ h1, h2, h3, h4 {
   color: var(--text-secondary);
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1; /* three minis share the column now — keep each to one line */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -817,6 +818,169 @@ h1, h2, h3, h4 {
   text-align: center;
   gap: 0.5rem;
   height: 100%;
+}
+
+/* ============================================================
+   CHORE BOARD (wall kiosk — big targets for small hands)
+   ============================================================ */
+
+.chores-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0 2rem 1.25rem;
+}
+.chores-head h1 { font-size: 2.2rem; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+.chores-head p { margin: 2px 0 0; color: var(--text-secondary); font-size: 1.05rem; }
+
+.chores-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 16px;
+}
+
+/* Each kid's column takes its identity from the --kid custom property. */
+.kid-col {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-top: 4px solid var(--kid);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-widget);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.kid-head { display: flex; align-items: center; gap: 14px; flex: none; }
+.kid-avatar {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--kid);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.kid-title { min-width: 0; }
+.kid-title h2 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
+.kid-earned { color: var(--text-secondary); font-size: 1rem; font-weight: 600; }
+.kid-ring { margin-left: auto; position: relative; width: 60px; height: 60px; flex: none; }
+.kid-ring-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.kid-alldone {
+  margin-left: auto;
+  background: var(--em-dim);
+  color: var(--em);
+  border: 1px solid var(--em);
+  font-size: 1rem;
+  font-weight: 750;
+  padding: 8px 16px;
+  border-radius: 999px;
+  animation: chorePop 0.45s ease;
+}
+
+.kid-chores {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
+}
+.chore-slot-group { display: flex; flex-direction: column; gap: 8px; }
+.chore-slot-label {
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.chore-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 72px;
+  padding: 12px 16px;
+  font-family: inherit;
+  background: var(--bg-panel-hover);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.chore-card:active { transform: scale(0.985); }
+.chore-card.done { border-color: var(--kid); }
+.chore-check {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  border: 2.5px solid var(--kid);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: transparent;
+}
+.chore-card.done .chore-check { background: var(--kid); animation: chorePop 0.35s ease; }
+.chore-emoji { font-size: 1.7rem; flex: none; }
+.chore-card.done .chore-emoji { opacity: 0.55; }
+.chore-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.2rem;
+  font-weight: 650;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.chore-card.done .chore-name { text-decoration: line-through; color: var(--text-tertiary); }
+.chore-val {
+  flex: none;
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: var(--gold);
+  background: var(--gold-dim);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.chore-card.done .chore-val { color: var(--em); background: var(--em-dim); }
+
+.chore-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+}
+
+@keyframes chorePop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
 }
 
 /* ============================================================

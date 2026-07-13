@@ -13,6 +13,7 @@ export default function Navigation() {
 
   const navItems = [
     { name: "Dashboard", path: "/" },
+    { name: "Chores", path: "/chores" },
     { name: "Monthly", path: "/monthly" },
     { name: "By Person", path: "/byperson" },
     { name: "Groceries", path: "/groceries" },

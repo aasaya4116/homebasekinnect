@@ -1,4 +1,5 @@
 import { getWeeklyMeals, getTodaySchedule, getGroceryList, getRawInventory } from "@/lib/data";
+import { getChoreBoards, fmtMoney } from "@/lib/chores";
 import { Utensils } from "lucide-react";
 import MealSwapModal from "@/components/MealSwapModal";
 import { getSmartMealImage } from "@/lib/mealImages";
@@ -31,6 +32,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const groceryItems = await getGroceryList();
   const rawInventory = await getRawInventory();
   const familyPhotos = await getFamilyPhotos();
+  const choreBoards = await getChoreBoards(dayStr(0));
 
   const daysCount = 7; // Rolling 7-day view
 
@@ -64,6 +66,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   const toBuyCount = groceryItems.filter((i) => i.status === "To Buy").length;
   const restockCount = groceryItems.filter((i) => i.status === "Restock").length;
+
+  // Chores tile — today's scheduled progress + combined weekly allowance.
+  const choresDone = choreBoards.reduce((n, b) => n + b.doneCount, 0);
+  const choresTotal = choreBoards.reduce((n, b) => n + b.totalScheduled, 0);
+  const choresWeekEarned = choreBoards.reduce((n, b) => n + b.earnedWeek, 0);
+  const allChoresDone = choresTotal > 0 && choresDone === choresTotal;
 
   // Grocery preview — real item names, not a lone number.
   const previewSource = (toBuyCount > 0 ? groceryItems.filter((i) => i.status === "To Buy") : groceryItems);
@@ -209,6 +217,37 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   <span className="t">List empty</span>
                 </div>
                 <div className="mini-sub">Schedule meals to generate the list</div>
+              </>
+            )}
+          </article>
+
+          {/* Chores */}
+          <article className="widget mini">
+            <div className="mini-top">
+              <span className="ovl">Chores</span>
+              {choresTotal > 0 && (
+                <span className={`chip ${allChoresDone ? "grn" : "gld"}`}>
+                  {choresDone}/{choresTotal} done
+                </span>
+              )}
+            </div>
+            {choreBoards.length > 0 ? (
+              <>
+                <div className="mini-val">
+                  <span className="t">
+                    {allChoresDone
+                      ? "All done! 🎉"
+                      : choreBoards.map((b) => `${b.kid} ${b.doneCount}/${b.totalScheduled}`).join(" · ")}
+                  </span>
+                </div>
+                <div className="mini-sub">{fmtMoney(choresWeekEarned)} earned this week</div>
+              </>
+            ) : (
+              <>
+                <div className="mini-val">
+                  <span className="t">No chores set</span>
+                </div>
+                <div className="mini-sub">Add rows to the Chores tab in the Sheet</div>
               </>
             )}
           </article>

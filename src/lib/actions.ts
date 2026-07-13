@@ -5,6 +5,8 @@ import { getGoogleAuth } from "./googleAuth";
 import { generateSchedule } from "./scheduler";
 import { cookForDate } from "./cadence";
 import { logSwap } from "./mealLog";
+import { appendChoreLog } from "./chores";
+import { todayStr } from "./dates";
 import { revalidatePath } from "next/cache";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1692O1jGvFv-aB00Xy7jU1kH_X0a0eB_E9nL2Q1b1O8c";
@@ -111,6 +113,28 @@ export async function swapMealAction(
     return { success: true };
   } catch (error: any) {
     console.error("Failed to swap meal:", error);
+    return { success: false, error: error.message || "Unknown error" };
+  }
+}
+
+/** Kid taps a chore on the kiosk — check off (done=true) or undo (done=false).
+ *  Always logged against today in the household timezone; past days stay
+ *  immutable from the wall. */
+export async function toggleChoreAction(
+  choreId: string,
+  kid: string,
+  done: boolean,
+  value: number
+) {
+  try {
+    await appendChoreLog(todayStr(), choreId, kid, done, value);
+
+    revalidatePath("/chores");
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to toggle chore:", error);
     return { success: false, error: error.message || "Unknown error" };
   }
 }
