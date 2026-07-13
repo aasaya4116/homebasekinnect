@@ -62,6 +62,14 @@ const categoryMap: { keywords: string[]; images: string[] }[] = [
     ]
   },
   {
+    // Jerk / Caribbean — must sit above the generic Chicken bucket so
+    // "Jerk Chicken" gets a proper spice-crusted plate, not a roast chicken.
+    keywords: ["jerk", "jamaican", "caribbean"],
+    images: [
+      "https://images.unsplash.com/photo-1772693471187-6e7d364f99ee" // Charred jerk chicken leg with seasoned rice & peppers
+    ]
+  },
+  {
     // Chicken / Poultry / Wings
     keywords: ["chicken", "poultry", "wing", "turkey", "schnitzel", "tender", "nugget", "hen", "drumstick", "cordon bleu", "marsala", "piccata", "cacciatore", "rotisserie", "parmesan"],
     images: [
