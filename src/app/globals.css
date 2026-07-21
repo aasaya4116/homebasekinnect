@@ -557,8 +557,9 @@ h1, h2, h3, h4 {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px; /* trimmed from 10px to give the agenda strip its room */
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 .day.today { border: 1.5px solid var(--gold); }
@@ -590,11 +591,12 @@ h1, h2, h3, h4 {
 }
 
 .meal {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   background: var(--bg-panel-hover);
   border: 1px solid var(--border-color);
   border-radius: 13px;
-  padding: 12px 13px;
+  padding: 11px 12px; /* trimmed from 12px 13px */
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -619,18 +621,60 @@ h1, h2, h3, h4 {
 .m-lab.lun { color: var(--em); }
 .m-time { margin-left: auto; font-size: 0.9rem; color: var(--text-secondary); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
 .m-name {
-  font-size: 1.35rem;
+  font-size: 1.25rem; /* trimmed from 1.35rem; still a 2-line clamp */
   font-weight: 600;
   letter-spacing: -0.01em;
-  line-height: 1.22;
-  margin-top: 7px;
+  line-height: 1.2;
+  margin-top: 6px;
   color: var(--text-primary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.m-cook { margin-top: auto; padding-top: 9px; display: flex; align-items: center; }
+.m-cook { margin-top: auto; padding-top: 8px; display: flex; align-items: center; }
+
+/* Per-day event strip — the day's activities, pinned below the two meals.
+   Meals keep flex:1 and split the free height; the agenda takes fixed space
+   at the bottom. Events read as a lighter accent-rail list so the meal cards
+   stay the primary filled surface. */
+.day-agenda {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.agenda-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding-left: 1px;
+  margin-bottom: 1px;
+}
+.event {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 8px 3px 9px;
+  border-left: 3px solid var(--person, var(--line-2));
+  border-radius: 0 6px 6px 0;
+}
+/* Left rail encodes who — same person coding as the rest of the app. */
+.event.p-mekhi  { --person: var(--accent-blue); }
+.event.p-khalil { --person: var(--accent-purple); }
+.event.p-dad    { --person: var(--gold); }
+.event.p-mom    { --person: var(--em); }
+.event.p-family { --person: var(--line-2); }
+.ev-time { flex: none; font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ev-title { flex: 1; min-width: 0; font-size: 0.88rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-more { font-size: 0.74rem; font-weight: 600; color: var(--text-tertiary); padding-left: 12px; }
+.ev-free { display: flex; align-items: center; gap: 7px; font-size: 0.84rem; color: var(--text-tertiary); padding: 2px 1px; }
+.ev-free .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--em); flex: none; }
 
 /* ============================================================
    MONTHLY CALENDAR (wall-filling, high-contrast, at-a-distance)

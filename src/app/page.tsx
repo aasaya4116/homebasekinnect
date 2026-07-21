@@ -1,4 +1,5 @@
-import { getWeeklyMeals, getTodaySchedule, getGroceryList, getRawInventory } from "@/lib/data";
+import { getWeeklyMeals, getTodaySchedule, getGroceryList, getRawInventory, getFullDaySchedule } from "@/lib/data";
+import type { Event } from "@/lib/data";
 import { getChoreBoards, fmtMoney } from "@/lib/chores";
 import { Utensils } from "lucide-react";
 import MealSwapModal from "@/components/MealSwapModal";
@@ -23,6 +24,24 @@ function cookMatchesFilter(cook: string | undefined, filter: string) {
   return (cook || "").toLowerCase() === filter; // "dad" or "mom"
 }
 
+// Person coding for the per-day event rail — same colors as the rest of the app
+// (Mekhi blue, Khalil purple, Dad gold, Mom emerald, everyone/anything else neutral).
+function personClass(person?: string) {
+  const p = (person || "").toLowerCase();
+  if (p === "mekhi") return "p-mekhi";
+  if (p === "khalil") return "p-khalil";
+  if (p === "dad") return "p-dad";
+  if (p === "mom") return "p-mom";
+  return "p-family";
+}
+
+// Color already carries who; append the name only for a specific person so a
+// glance from across the room isn't relying on telling blue from purple.
+function personSuffix(person?: string) {
+  const p = (person || "").toLowerCase();
+  return ["mekhi", "khalil", "dad", "mom"].includes(p) ? ` — ${person}` : "";
+}
+
 export default async function Home({ searchParams }: { searchParams: Promise<{ cook?: string }> }) {
   const params = await searchParams;
   const cookFilter = params.cook || "all";
@@ -35,6 +54,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const choreBoards = await getChoreBoards(dayStr(0));
 
   const daysCount = 7; // Rolling 7-day view
+  const weekEvents = await getFullDaySchedule(daysCount);
 
   const days = Array.from({ length: daysCount }).map((_, i) => {
     // All day math is pinned to the household timezone (see lib/dates) so the
@@ -50,7 +70,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
     const lunch = dayMeals.find((m) => (m.type || "").toLowerCase() === "lunch") || null;
     const dinner = dayMeals.find((m) => (m.type || "Dinner").toLowerCase() === "dinner") || null;
 
-    return { index: i, dayNameShort, dayNum, monthShort, lunch, dinner, isToday: i === 0, targetDateStr };
+    // Events touching this day. A multi-day all-day span (e.g. a trip) carries
+    // an endDate, so it shows on every day it covers; timed events land on their
+    // own day. All-day entries sort above timed ones.
+    const dayEvents = weekEvents
+      .filter((e) => {
+        const start = e.date || "";
+        const end = e.endDate || e.date || "";
+        return start && start <= targetDateStr && targetDateStr <= end;
+      })
+      .sort((a, b) => (a.time === "All Day" ? 0 : 1) - (b.time === "All Day" ? 0 : 1));
+
+    return { index: i, dayNameShort, dayNum, monthShort, lunch, dinner, isToday: i === 0, targetDateStr, dayEvents };
   });
 
   const filteredDays =
@@ -334,6 +365,26 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   <span style={{ fontSize: "0.85rem", color: "var(--text-tertiary)" }}>No dinner</span>
                 </div>
               )}
+
+              {/* On the calendar — the day's events, whose color rail = who */}
+              <div className="day-agenda">
+                <span className="agenda-label">On the calendar</span>
+                {day.dayEvents.length > 0 ? (
+                  <>
+                    {day.dayEvents.slice(0, 2).map((ev: Event) => (
+                      <div key={ev.id} className={`event ${personClass(ev.person)}`}>
+                        <span className="ev-time">{ev.time === "All Day" ? "All day" : ev.time}</span>
+                        <span className="ev-title">{ev.title}{personSuffix(ev.person)}</span>
+                      </div>
+                    ))}
+                    {day.dayEvents.length > 2 && (
+                      <span className="ev-more">+{day.dayEvents.length - 2} more</span>
+                    )}
+                  </>
+                ) : (
+                  <div className="ev-free"><span className="dot" />Nothing scheduled</div>
+                )}
+              </div>
             </div>
           ))}
         </div>
