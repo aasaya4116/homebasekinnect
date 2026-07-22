@@ -5,7 +5,7 @@ import { getGoogleAuth } from "./googleAuth";
 import { generateSchedule } from "./scheduler";
 import { cookForDate } from "./cadence";
 import { logSwap } from "./mealLog";
-import { appendChoreLog } from "./chores";
+import { appendChoreLog, appendBalanceAdjustment } from "./chores";
 import { todayStr } from "./dates";
 import { revalidatePath } from "next/cache";
 
@@ -113,6 +113,32 @@ export async function swapMealAction(
     return { success: true };
   } catch (error: any) {
     console.error("Failed to swap meal:", error);
+    return { success: false, error: error.message || "Unknown error" };
+  }
+}
+
+/** Parent adjusts a kid's balance — bonus (+), deduction (−), or full cash-out
+ *  (zeroOut=true, amount computed server-side). Every adjustment lands as an
+ *  append-only Balance Log row: timestamp, amount, new total, note. */
+export async function adjustBalanceAction(
+  kid: string,
+  amount: number,
+  note: string,
+  zeroOut: boolean
+) {
+  try {
+    if (!zeroOut && (!isFinite(amount) || amount === 0)) {
+      return { success: false, error: "Enter a non-zero amount" };
+    }
+
+    const result = await appendBalanceAdjustment(kid, amount, note.trim(), zeroOut);
+
+    revalidatePath("/chores");
+    revalidatePath("/");
+
+    return { success: true, ...result };
+  } catch (error: any) {
+    console.error("Failed to adjust balance:", error);
     return { success: false, error: error.message || "Unknown error" };
   }
 }

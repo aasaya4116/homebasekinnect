@@ -28,6 +28,7 @@ export type KidBoard = {
   earnedWeek: number;     // since the most recent Sunday
   weekDone: number;       // scheduled chores done Sun → today (as-needed = bonus, not counted)
   weekTotal: number;      // scheduled chores due Sun → today
+  balance: number;        // lifetime earned + all balance adjustments (cash-outs negative)
 };
 
 // Display order for time-of-day groups on the board.

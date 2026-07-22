@@ -1,6 +1,7 @@
 import { getChoreBoards, fmtMoney } from "@/lib/chores";
 import { todayStr, dayParts } from "@/lib/dates";
 import KidChoreColumn from "@/components/KidChoreColumn";
+import BalanceAdjustModal from "@/components/BalanceAdjustModal";
 
 // Check-offs revalidate instantly via the server action; this is just the
 // backstop for edits made directly in the Sheet (new chores, value changes).
@@ -62,6 +63,11 @@ export default async function Chores() {
                     </div>
                   </div>
                   <span className="tally-money">{fmtMoney(board.earnedWeek)}</span>
+                  <BalanceAdjustModal
+                    kid={board.kid}
+                    balance={board.balance}
+                    color={kidColor(board.kid, i)}
+                  />
                 </div>
               );
             })}

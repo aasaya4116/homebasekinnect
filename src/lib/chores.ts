@@ -29,9 +29,16 @@ const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || "";
 
 export const CHORES_TAB = "Chores";
 export const CHORE_LOG_TAB = "Chore Log";
+export const BALANCE_LOG_TAB = "Balance Log";
 
 export const CHORES_HEADER = ["ID", "Kid", "Chore", "Emoji", "Days", "Slot", "Allowance", "Active"];
 export const CHORE_LOG_HEADER = ["Timestamp", "Date", "Chore ID", "Kid", "Action", "Value"];
+export const BALANCE_LOG_HEADER = ["Timestamp", "Kid", "Amount", "New Balance", "Note"];
+
+/** Money math on cents so 0.1 + 0.2 style float drift never reaches the ledger. */
+function round2(v: number): number {
+  return Math.round(v * 100) / 100;
+}
 
 // ------------------------------------------------------------
 // Tab bootstrap — same pattern as mealLog.ensureTab.
@@ -161,11 +168,103 @@ function datesFromTo(start: string, end: string): string[] {
 }
 
 // ------------------------------------------------------------
+// Balances — lifetime chore earnings plus manual adjustments.
+// "Balance Log" is append-only, same philosophy as Chore Log: every
+// cash-out / correction is a timestamped row, nothing is ever edited.
+// ------------------------------------------------------------
+
+/** Sum of all balance adjustments per kid (cash-outs are negative rows). */
+async function getAdjustmentSums(): Promise<Map<string, number>> {
+  const sums = new Map<string, number>();
+  try {
+    const auth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets.readonly"]);
+    const sheets = google.sheets({ version: "v4", auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${BALANCE_LOG_TAB}'!A2:E10000`,
+    });
+    for (const r of res.data.values || []) {
+      const kid = String(r[1] || "").trim();
+      const amt = parseFloat(r[2]);
+      if (!kid || isNaN(amt)) continue;
+      sums.set(kid, round2((sums.get(kid) || 0) + amt));
+    }
+  } catch (error: any) {
+    console.log("No Balance Log tab found:", error.message);
+  }
+  return sums;
+}
+
+/** Lifetime done-chore earnings for one kid from the final log states. */
+function lifetimeEarned(states: Map<string, LogState>, kid: string): number {
+  let total = 0;
+  for (const s of states.values()) {
+    if (s.done && s.kid === kid) total += s.value;
+  }
+  return round2(total);
+}
+
+/** Current balance = lifetime chore earnings + adjustment sum. */
+export async function getKidBalance(kid: string): Promise<number> {
+  const [states, sums] = await Promise.all([getLogStates(), getAdjustmentSums()]);
+  return round2(lifetimeEarned(states, kid) + (sums.get(kid) || 0));
+}
+
+/** Append one balance adjustment (cash-out = negative). With `zeroOut`, the
+ *  amount is computed server-side as -currentBalance at write time so a stale
+ *  client can never over- or under-cash. Returns what was written. */
+export async function appendBalanceAdjustment(
+  kid: string,
+  amount: number,
+  note: string,
+  zeroOut: boolean
+): Promise<{ amount: number; newBalance: number }> {
+  const current = await getKidBalance(kid);
+  const delta = zeroOut ? round2(-current) : round2(amount);
+  const newBalance = round2(current + delta);
+
+  const auth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);
+  const sheets = google.sheets({ version: "v4", auth });
+  await ensureBalanceTab(sheets);
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${BALANCE_LOG_TAB}'!A:E`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[new Date().toISOString(), kid, delta, newBalance, note || ""]],
+    },
+  });
+
+  return { amount: delta, newBalance };
+}
+
+/** Create the Balance Log tab on first use. Kept separate from
+ *  ensureChoreTabs so the chore check-off write path is untouched. */
+async function ensureBalanceTab(sheets: any): Promise<void> {
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+  const exists = (meta.data.sheets || []).some(
+    (s: any) => s.properties?.title === BALANCE_LOG_TAB
+  );
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: BALANCE_LOG_TAB } } }] },
+    });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${BALANCE_LOG_TAB}'!A1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [BALANCE_LOG_HEADER] },
+    });
+  }
+}
+
+// ------------------------------------------------------------
 // The board — everything the kiosk page needs for one day.
 // Kids appear in the order they first appear in the Chores tab.
 // ------------------------------------------------------------
 export async function getChoreBoards(dateStr: string): Promise<KidBoard[]> {
-  const [defs, states] = await Promise.all([getChoreDefs(), getLogStates()]);
+  const [defs, states, adjSums] = await Promise.all([getChoreDefs(), getLogStates(), getAdjustmentSums()]);
   const wkStart = weekStart(dateStr);
 
   const kids: string[] = [];
@@ -218,6 +317,7 @@ export async function getChoreBoards(dateStr: string): Promise<KidBoard[]> {
       earnedWeek,
       weekDone,
       weekTotal,
+      balance: round2(lifetimeEarned(states, kid) + (adjSums.get(kid) || 0)),
     };
   });
 }
