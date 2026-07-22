@@ -42,10 +42,16 @@ export default function BalanceAdjustModal({
   kid,
   balance,
   color,
+  variant = "pill",
+  lineText,
 }: {
   kid: string;
   balance: number;
   color: string;
+  /** "pill" = wallet pill (tally strip); "line" = inline earnings-line trigger (kid card header). */
+  variant?: "pill" | "line";
+  /** Text for the line variant, e.g. "$1 this week · 25¢ today". */
+  lineText?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [amountStr, setAmountStr] = useState("");
@@ -81,29 +87,45 @@ export default function BalanceAdjustModal({
   return (
     <>
       {/* Trigger — the kid's running balance is the tap target */}
-      <button
-        onClick={() => setIsOpen(true)}
-        title={`Adjust balance / cash out for ${kid}`}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "7px",
-          background: "var(--gold-dim)",
-          color: "var(--gold)",
-          border: "1px solid transparent",
-          borderRadius: "999px",
-          padding: "8px 16px",
-          fontSize: "0.9rem",
-          fontWeight: 750,
-          fontFamily: "inherit",
-          cursor: "pointer",
-          minHeight: "44px",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <Wallet size={16} />
-        {fmtMoney(balance)}
-      </button>
+      {variant === "line" ? (
+        // Kid-card header: the earnings line itself opens the modal. Kept
+        // visually identical to the old static line, with a wallet glyph and
+        // the balance as the affordance that it's tappable.
+        <button
+          onClick={() => setIsOpen(true)}
+          title={`Adjust balance / cash out for ${kid}`}
+          className="kid-earned kid-earned-btn"
+        >
+          <Wallet size={14} aria-hidden />
+          <b>{fmtMoney(balance)}</b>
+          {lineText ? <span className="ke-sep">·</span> : null}
+          {lineText}
+        </button>
+      ) : (
+        <button
+          onClick={() => setIsOpen(true)}
+          title={`Adjust balance / cash out for ${kid}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "7px",
+            background: "var(--gold-dim)",
+            color: "var(--gold)",
+            border: "1px solid transparent",
+            borderRadius: "999px",
+            padding: "8px 16px",
+            fontSize: "0.9rem",
+            fontWeight: 750,
+            fontFamily: "inherit",
+            cursor: "pointer",
+            minHeight: "44px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <Wallet size={16} />
+          {fmtMoney(balance)}
+        </button>
+      )}
 
       {isOpen && (
         <div
@@ -145,7 +167,7 @@ export default function BalanceAdjustModal({
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1.15rem", color: "var(--text-primary)" }}>
-                    Adjust Balance for {kid}
+                    Adjust Balances for {kid}
                   </h3>
                   <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-tertiary)" }}>
                     Current balance: <b style={{ color: "var(--gold)" }}>{fmtMoney(balance)}</b>

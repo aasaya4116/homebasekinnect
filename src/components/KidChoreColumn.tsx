@@ -8,6 +8,7 @@
 import { useOptimistic, useTransition } from "react";
 import { toggleChoreAction } from "@/lib/actions";
 import { fmtMoney, SLOT_ORDER, type ChoreItem, type KidBoard } from "@/lib/choreShared";
+import BalanceAdjustModal from "./BalanceAdjustModal";
 
 type Toggle = { id: string; done: boolean };
 
@@ -34,6 +35,10 @@ export default function KidChoreColumn({ board, color }: { board: KidBoard; colo
   }
   const earnedToday = Math.max(0, board.earnedToday + delta);
   const earnedWeek = Math.max(0, board.earnedWeek + delta);
+  // The running balance moves with the same optimistic delta, so the modal's
+  // "Current balance" matches what just happened on screen. The zero-out
+  // amount is still computed server-side at write time either way.
+  const balance = Math.round((board.balance + delta) * 100) / 100;
 
   const onTap = (chore: ChoreItem) => {
     startTransition(async () => {
@@ -74,9 +79,14 @@ export default function KidChoreColumn({ board, color }: { board: KidBoard; colo
         <div className="kid-avatar">{board.kid[0]}</div>
         <div className="kid-title">
           <h2>{board.kid}</h2>
-          <span className="kid-earned">
-            {fmtMoney(earnedWeek)} this week{earnedToday > 0 ? ` · ${fmtMoney(earnedToday)} today` : ""}
-          </span>
+          {/* The earnings line doubles as the Adjust Balances trigger */}
+          <BalanceAdjustModal
+            kid={board.kid}
+            balance={balance}
+            color={color}
+            variant="line"
+            lineText={`${fmtMoney(earnedWeek)} this week${earnedToday > 0 ? ` · ${fmtMoney(earnedToday)} today` : ""}`}
+          />
         </div>
         {allDone ? (
           <span className="kid-alldone">All done! 🎉</span>
