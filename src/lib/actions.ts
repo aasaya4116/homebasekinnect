@@ -134,6 +134,7 @@ export async function adjustBalanceAction(
     const result = await appendBalanceAdjustment(kid, amount, note.trim(), zeroOut);
 
     revalidatePath("/chores");
+    revalidatePath("/history");
     revalidatePath("/");
 
     return { success: true, ...result };
@@ -156,6 +157,7 @@ export async function toggleChoreAction(
     await appendChoreLog(todayStr(), choreId, kid, done, value);
 
     revalidatePath("/chores");
+    revalidatePath("/history");
     revalidatePath("/");
 
     return { success: true };

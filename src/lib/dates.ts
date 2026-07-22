@@ -85,3 +85,16 @@ export function zonedHourFloat(instant: Date): number {
 export function zonedTimeLabel(instant: Date): string {
   return instant.toLocaleTimeString("en-US", { timeZone: APP_TZ, hour: "numeric", minute: "2-digit" });
 }
+
+/** Full ledger-style label in APP_TZ, e.g. "Monday, Jul 20 at 9:22 AM". */
+export function zonedDateTimeLabel(instant: Date): string {
+  const date = instant.toLocaleDateString("en-US", {
+    weekday: "long", month: "short", day: "numeric", timeZone: APP_TZ,
+  });
+  return `${date} at ${zonedTimeLabel(instant)}`;
+}
+
+/** The calendar date (YYYY-MM-DD) of an instant in APP_TZ. */
+export function zonedDateStr(instant: Date): string {
+  return instant.toLocaleDateString("en-CA", { timeZone: APP_TZ });
+}
