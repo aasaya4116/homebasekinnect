@@ -822,20 +822,25 @@ h1, h2, h3, h4 {
 .cal-chip.event  { border-left-color: var(--accent-blue); background: var(--accent-blue-glow); font-weight: 600; }
 
 /* Hover-to-swap on meal chips: the icon overlays the chip's right edge, so
-   cell heights and the grid layout are untouched. Events/banners unaffected. */
+   cell heights and the grid layout are untouched. Events/banners unaffected.
+   NOTE: no transform here — a transformed ancestor becomes the containing
+   block for the modal's position:fixed overlay, shrinking it into the chip.
+   Vertical centering is done with top/bottom + flex instead. */
 .cal-chip-wrap { position: relative; min-width: 0; }
 .cal-swap {
   position: absolute;
-  top: 50%;
+  top: 0;
+  bottom: 0;
   right: 3px;
-  transform: translateY(-50%);
   display: flex;
+  align-items: center;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s;
 }
 .cal-chip-wrap:hover .cal-swap,
-.cal-swap:focus-within {
+.cal-swap:focus-within,
+.cal-swap:has(div) { /* modal open — stay visible/clickable regardless of hover */
   opacity: 1;
   pointer-events: auto;
 }
