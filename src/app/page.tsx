@@ -1,4 +1,4 @@
-import { getWeeklyMeals, getTodaySchedule, getGroceryList, getRawInventory, getFullDaySchedule } from "@/lib/data";
+import { getWeeklyMeals, getTodaySchedule, getRawInventory, getFullDaySchedule } from "@/lib/data";
 import type { Event } from "@/lib/data";
 import { getChoreBoards, fmtMoney } from "@/lib/chores";
 import { Utensils } from "lucide-react";
@@ -48,7 +48,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
 
   const allMeals = await getWeeklyMeals();
   const schedule = await getTodaySchedule();
-  const groceryItems = await getGroceryList();
   const rawInventory = await getRawInventory();
   const familyPhotos = await getFamilyPhotos();
   const choreBoards = await getChoreBoards(dayStr(0));
@@ -95,21 +94,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const tomorrowsDinner = days.length > 1 ? days[1].dinner : null;
   const todaysLunch = days[0].lunch;
 
-  const toBuyCount = groceryItems.filter((i) => i.status === "To Buy").length;
-  const restockCount = groceryItems.filter((i) => i.status === "Restock").length;
-
   // Chores tile — today's scheduled progress + combined weekly allowance.
   const choresDone = choreBoards.reduce((n, b) => n + b.doneCount, 0);
   const choresTotal = choreBoards.reduce((n, b) => n + b.totalScheduled, 0);
   const choresWeekEarned = choreBoards.reduce((n, b) => n + b.earnedWeek, 0);
   const allChoresDone = choresTotal > 0 && choresDone === choresTotal;
-
-  // Grocery preview — real item names, not a lone number.
-  const previewSource = (toBuyCount > 0 ? groceryItems.filter((i) => i.status === "To Buy") : groceryItems);
-  const previewNames = previewSource.slice(0, 6).map((i) => i.ingredient);
-  const previewRemaining = previewSource.length - previewNames.length;
-  const groceryPreview =
-    previewNames.join(" · ") + (previewRemaining > 0 ? ` · +${previewRemaining} more` : "");
 
   // Week filter segmented control
   const filterOpts = [
@@ -192,7 +181,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           )}
         </article>
 
-        {/* MIDDLE COLUMN — two stacked minis */}
+        {/* MIDDLE COLUMN — This Evening + Chores */}
         <div className="trio2">
           {/* This Evening */}
           <article className="widget mini">
@@ -223,31 +212,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   Evening free
                 </div>
                 <div className="mini-sub">Nothing on the calendar after 5 pm</div>
-              </>
-            )}
-          </article>
-
-          {/* Groceries */}
-          <article className="widget mini">
-            <div className="mini-top">
-              <span className="ovl">Groceries</span>
-              {groceryItems.length > 0 && (
-                <span className="chip gld">{toBuyCount + restockCount} items</span>
-              )}
-            </div>
-            {groceryItems.length > 0 ? (
-              <>
-                <div className="mini-val">
-                  <span className="t">{toBuyCount > 0 ? "Ready to shop" : "All stocked"}</span>
-                </div>
-                <div className="mini-sub">{groceryPreview}</div>
-              </>
-            ) : (
-              <>
-                <div className="mini-val">
-                  <span className="t">List empty</span>
-                </div>
-                <div className="mini-sub">Schedule meals to generate the list</div>
               </>
             )}
           </article>
