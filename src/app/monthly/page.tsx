@@ -1,6 +1,16 @@
-import { getWeeklyMeals, getFullDaySchedule } from "@/lib/data";
+import { getWeeklyMeals, getFullDaySchedule, getRawInventory } from "@/lib/data";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { todayStr as getTodayStr } from "@/lib/dates";
+import MealSwapModal from "@/components/MealSwapModal";
+
+// Hover-reveal swap trigger — small icon on the right edge of a meal chip.
+const swapBtnStyle: React.CSSProperties = {
+  background: "var(--bg-panel)",
+  border: "1px solid var(--border-color)",
+  color: "var(--gold)",
+  borderRadius: "6px",
+  padding: "3px 5px",
+};
 
 export const revalidate = 1800;
 
@@ -14,6 +24,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   
   const allMeals = await getWeeklyMeals();
   const monthlyEvents = await getFullDaySchedule(90);
+  const rawInventory = await getRawInventory(); // recipe list for the swap modal
 
   // Build calendar grid for the view month
   const firstDay = new Date(viewYear, viewMonth, 1);
@@ -174,10 +185,34 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
                         <span className="cal-daynum">{cell.dayNum}</span>
 
                         {cell.dinners.map((dinner, di) => (
-                          <div key={`d-${di}`} className="cal-chip dinner" title={dinner.name}>{dinner.name}</div>
+                          <div key={`d-${di}`} className="cal-chip-wrap">
+                            <div className="cal-chip dinner" title={dinner.name}>{dinner.name}</div>
+                            <span className="cal-swap">
+                              <MealSwapModal
+                                dateStr={cell.dateStr}
+                                mealType="Dinner"
+                                currentMealName={dinner.name}
+                                inventory={rawInventory}
+                                label=""
+                                buttonStyle={swapBtnStyle}
+                              />
+                            </span>
+                          </div>
                         ))}
                         {cell.lunches.map((lunch, li) => (
-                          <div key={`l-${li}`} className="cal-chip lunch" title={lunch.name}>{lunch.name}</div>
+                          <div key={`l-${li}`} className="cal-chip-wrap">
+                            <div className="cal-chip lunch" title={lunch.name}>{lunch.name}</div>
+                            <span className="cal-swap">
+                              <MealSwapModal
+                                dateStr={cell.dateStr}
+                                mealType="Lunch"
+                                currentMealName={lunch.name}
+                                inventory={rawInventory}
+                                label=""
+                                buttonStyle={swapBtnStyle}
+                              />
+                            </span>
+                          </div>
                         ))}
                         {cell.events.map((evt, ei) => (
                           <div key={`e-${ei}`} className="cal-chip event" title={evt.title}>{evt.title}</div>
