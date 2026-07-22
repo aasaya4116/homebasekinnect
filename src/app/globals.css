@@ -634,17 +634,21 @@ h1, h2, h3, h4 {
 }
 .m-cook { margin-top: auto; padding-top: 8px; display: flex; align-items: center; }
 
-/* Per-day event strip — the day's activities, pinned below the two meals.
-   Meals keep flex:1 and split the free height; the agenda takes fixed space
-   at the bottom. Events read as a lighter accent-rail list so the meal cards
-   stay the primary filled surface. */
+/* Per-day event card — the day's activities, a co-equal third alongside the
+   two meal cards. Same filled surface + border as .meal so all three read as
+   siblings; flex:1 makes lunch / dinner / calendar split the column evenly. */
 .day-agenda {
-  flex: none;
+  flex: 1 1 0;
+  min-height: 0;
+  background: var(--bg-panel-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 13px;
+  padding: 11px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-subtle);
+  min-width: 0;
+  overflow: hidden;
 }
 .agenda-label {
   font-size: 0.68rem;
