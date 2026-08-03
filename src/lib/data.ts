@@ -34,6 +34,32 @@ export type GroceryItem = {
   mealSource: string;
 };
 
+// A hand-planned day from the "Menu" tab — the richer, five-lane model
+// (breakfast + two adult lunches + kids + dinner + cook). This tab is the
+// source of truth for months planned by hand; it is NEVER touched by the
+// auto-generator (which owns "Scheduled Meals"), so Regenerate can't wipe it.
+export type MenuDay = {
+  date: string;
+  breakfast: string;
+  lunchLatoya: string;
+  lunchAdebowale: string;
+  kids: string;
+  dinner: string;
+  cook: string; // raw: "Latoya" | "Adebowale" | "" (eat out / none)
+};
+
+export const MENU_TAB = "Menu";
+export const MENU_HEADER = ["Date", "Breakfast", "Latoya Lunch", "Adebowale Lunch", "Kids", "Dinner", "Cook"];
+
+/** Normalize a Menu "Cook" value to the app's Dad/Mom coding
+ *  (Latoya = Mom/emerald, Adebowale = Dad/gold). "" when nobody cooks. */
+export function cookToParent(cook?: string): "Mom" | "Dad" | "" {
+  const c = (cook || "").trim().toLowerCase();
+  if (c.startsWith("lato") || c === "mom") return "Mom";
+  if (c.startsWith("adeb") || c === "dad") return "Dad";
+  return "";
+}
+
 const auth = getGoogleAuth([
   'https://www.googleapis.com/auth/spreadsheets.readonly', 
   'https://www.googleapis.com/auth/calendar.readonly'
@@ -248,6 +274,67 @@ export async function getPantryStaples(): Promise<Set<string>> {
   } catch (error: any) {
     console.log("No Pantry Staples tab found, using defaults:", error.message);
     return new Set<string>();
+  }
+}
+
+/** Read the hand-planned "Menu" tab into a date → MenuDay map. Missing tab
+ *  is not an error — months without a detailed menu simply fall back to the
+ *  auto-generated Scheduled Meals plan. */
+export async function getMenuDetail(): Promise<Map<string, MenuDay>> {
+  const map = new Map<string, MenuDay>();
+  try {
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${MENU_TAB}'!A2:G400`,
+    });
+    const rows = res.data.values || [];
+    for (const row of rows) {
+      const date = String(row[0] || "").slice(0, 10);
+      if (!date) continue;
+      map.set(date, {
+        date,
+        breakfast: (row[1] || "").trim(),
+        lunchLatoya: (row[2] || "").trim(),
+        lunchAdebowale: (row[3] || "").trim(),
+        kids: (row[4] || "").trim(),
+        dinner: (row[5] || "").trim(),
+        cook: (row[6] || "").trim(),
+      });
+    }
+  } catch (error: any) {
+    console.log("No Menu tab found (using generated schedule):", error.message);
+  }
+  return map;
+}
+
+/** Update a hand-planned day's Dinner (or Kids lunch) cell in the Menu tab.
+ *  Returns true if the date was menu-managed and updated, false otherwise —
+ *  letting the caller fall back to the generated Scheduled Meals path. */
+export async function updateMenuMeal(dateStr: string, mealType: string, value: string): Promise<boolean> {
+  try {
+    const writeAuth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);
+    const sheets = google.sheets({ version: 'v4', auth: writeAuth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${MENU_TAB}'!A2:A400`,
+    });
+    const dates = res.data.values || [];
+    const idx = dates.findIndex((r) => String(r[0] || "").slice(0, 10) === dateStr);
+    if (idx === -1) return false; // not a menu-managed date
+
+    const sheetRow = idx + 2; // +1 header, +1 to 1-based
+    const col = mealType.trim().toLowerCase() === "lunch" ? "E" : "F"; // Kids vs Dinner
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${MENU_TAB}'!${col}${sheetRow}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [[value]] },
+    });
+    return true;
+  } catch (error: any) {
+    console.error("updateMenuMeal failed:", error.message);
+    return false;
   }
 }
 

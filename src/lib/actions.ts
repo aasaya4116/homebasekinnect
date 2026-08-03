@@ -34,6 +34,17 @@ export async function swapMealAction(
   image: string = ""
 ) {
   try {
+    // Menu-aware: if this date is hand-planned in the Menu tab, the swap edits
+    // that tab (Dinner / Kids cell) instead of the generated Scheduled Meals —
+    // so a Regenerate can't undo it and the two sources never diverge.
+    const { updateMenuMeal } = await import("./data");
+    if (await updateMenuMeal(dateStr, mealType, newMealName)) {
+      revalidatePath("/", "layout");
+      revalidatePath("/");
+      revalidatePath("/monthly");
+      return { success: true };
+    }
+
     // The cadence decides who cooks — a swap changes the dish, not the cook.
     const cook = cookForDate(dateStr);
     const auth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);

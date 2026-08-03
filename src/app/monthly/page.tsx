@@ -1,4 +1,4 @@
-import { getWeeklyMeals, getFullDaySchedule, getRawInventory } from "@/lib/data";
+import { getWeeklyMeals, getFullDaySchedule, getRawInventory, getMenuDetail, cookToParent, type MenuDay } from "@/lib/data";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { todayStr as getTodayStr } from "@/lib/dates";
 import MealSwapModal from "@/components/MealSwapModal";
@@ -11,6 +11,14 @@ const swapBtnStyle: React.CSSProperties = {
   borderRadius: "6px",
   padding: "3px 5px",
 };
+
+// Cook badge: Latoya (Mom) = emerald "L", Adebowale (Dad) = gold "A".
+function cookBadge(cook?: string) {
+  const p = cookToParent(cook);
+  if (p === "Mom") return { letter: "L", cls: "cook-badge L", title: "Latoya cooked" };
+  if (p === "Dad") return { letter: "A", cls: "cook-badge A", title: "Adebowale cooked" };
+  return null;
+}
 
 export const revalidate = 1800;
 
@@ -25,6 +33,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   const allMeals = await getWeeklyMeals();
   const monthlyEvents = await getFullDaySchedule(90);
   const rawInventory = await getRawInventory(); // recipe list for the swap modal
+  const menuDetail = await getMenuDetail(); // hand-planned months (five-lane detail)
 
   // Build calendar grid for the view month
   const firstDay = new Date(viewYear, viewMonth, 1);
@@ -42,14 +51,14 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
   // (todayStr is computed above, pinned to the household timezone)
 
   // Build day cells
-  const dayCells: (null | { dayNum: number; dateStr: string; isToday: boolean; dinners: any[]; lunches: any[]; events: any[] })[] = [];
-  
+  const dayCells: (null | { dayNum: number; dateStr: string; isToday: boolean; dinners: any[]; lunches: any[]; events: any[]; menu?: MenuDay })[] = [];
+
   for (let i = 0; i < startPadding; i++) dayCells.push(null);
-  
+
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = viewYear + "-" + String(viewMonth + 1).padStart(2, '0') + "-" + String(d).padStart(2, '0');
     const cellDate = new Date(viewYear, viewMonth, d);
-    
+
     const dayMeals = allMeals.filter(m => {
       if (!m.date || m.date === "Unknown Date") return false;
       const normalizedDateStr = m.date.replace(/-/g, '/');
@@ -74,6 +83,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
       dinners,
       lunches,
       events: dayEvents,
+      menu: menuDetail.get(dateStr), // hand-planned detail, if any
     });
   }
 
@@ -134,6 +144,18 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
     return segs;
   }
 
+  // The "same all week" meal-prep for a week — pulled from any weekday cell that
+  // carries menu detail (breakfast + the two adult lunches repeat Mon–Fri).
+  function weekPrep(week: typeof dayCells) {
+    for (const c of week) {
+      const m = c?.menu;
+      if (m && (m.breakfast || m.lunchLatoya || m.lunchAdebowale)) {
+        return { breakfast: m.breakfast, lunchLatoya: m.lunchLatoya, lunchAdebowale: m.lunchAdebowale };
+      }
+    }
+    return null;
+  }
+
   return (
     <div className="dashboard-container">
       <div className="cal-shell">
@@ -160,6 +182,7 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
           {weeks.map((week, wi) => {
             const banners = weekBanners(week);
             const laneCount = banners.reduce((m, b) => Math.max(m, b.lane + 1), 0);
+            const prep = weekPrep(week);
             return (
               <div key={wi} className="cal-week">
                 {laneCount > 0 && (
@@ -177,9 +200,57 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
                   </div>
                 )}
 
+                {/* Weekly meal-prep rail — the "same all week" items, spanning Mon–Fri */}
+                {prep && (
+                  <div className="cal-prep">
+                    <div className="cal-prep-inner">
+                      <span className="cal-prep-lead">Meal Prep</span>
+                      {prep.breakfast && (
+                        <span className="cal-prep-item"><span className="ml-tag b">B</span><span className="ml-txt">{prep.breakfast}</span></span>
+                      )}
+                      {prep.lunchLatoya && (
+                        <><span className="cal-prep-sep">·</span><span className="cal-prep-item"><span className="ml-tag l">L</span><span className="ml-txt">{prep.lunchLatoya}</span></span></>
+                      )}
+                      {prep.lunchAdebowale && (
+                        <><span className="cal-prep-sep">·</span><span className="cal-prep-item"><span className="ml-tag a">A</span><span className="ml-txt">{prep.lunchAdebowale}</span></span></>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="cal-days">
                   {week.map((cell, ci) => {
                     if (!cell) return <div key={`pad-${wi}-${ci}`} className="cal-cell pad" />;
+
+                    // Hand-planned day (Menu tab): rich Kids + Dinner + cook layout.
+                    if (cell.menu) {
+                      const m = cell.menu;
+                      const badge = cookBadge(m.cook);
+                      return (
+                        <div key={cell.dateStr} className={`cal-cell${cell.isToday ? ' today' : ''}`}>
+                          <span className="cal-daynum">{cell.dayNum}</span>
+                          {m.kids && (
+                            <div className="cal-mealline"><span className="ml-tag k">K</span><span className="ml-txt" title={m.kids}>{m.kids}</span></div>
+                          )}
+                          {m.dinner && (
+                            <div className="cal-chip-wrap cal-dinner-wrap">
+                              <div className="cal-dinner">
+                                <span className="cd-txt" title={m.dinner}>{m.dinner}</span>
+                                {badge && <span className={badge.cls} title={badge.title}>{badge.letter}</span>}
+                              </div>
+                              <span className="cal-swap">
+                                <MealSwapModal dateStr={cell.dateStr} mealType="Dinner" currentMealName={m.dinner} inventory={rawInventory} label="" buttonStyle={swapBtnStyle} />
+                              </span>
+                            </div>
+                          )}
+                          {cell.events.map((evt, ei) => (
+                            <div key={`e-${ei}`} className="cal-chip event" title={evt.title}>{evt.title}</div>
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    // Auto-generated month: the existing dinner/lunch chips (unchanged).
                     return (
                       <div key={cell.dateStr} className={`cal-cell${cell.isToday ? ' today' : ''}`}>
                         <span className="cal-daynum">{cell.dayNum}</span>

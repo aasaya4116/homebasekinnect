@@ -1,4 +1,4 @@
-import { getWeeklyMeals, getTodaySchedule, getRawInventory, getFullDaySchedule } from "@/lib/data";
+import { getWeeklyMeals, getTodaySchedule, getRawInventory, getFullDaySchedule, getMenuDetail, cookToParent } from "@/lib/data";
 import type { Event } from "@/lib/data";
 import { getChoreBoards, fmtMoney } from "@/lib/chores";
 import { Utensils } from "lucide-react";
@@ -51,6 +51,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const rawInventory = await getRawInventory();
   const familyPhotos = await getFamilyPhotos();
   const choreBoards = await getChoreBoards(dayStr(0));
+  const menuDetail = await getMenuDetail(); // hand-planned months override the generated plan
 
   const daysCount = 7; // Rolling 7-day view
   const weekEvents = await getFullDaySchedule(daysCount);
@@ -66,8 +67,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       return m.date.slice(0, 10) === targetDateStr;
     });
 
-    const lunch = dayMeals.find((m) => (m.type || "").toLowerCase() === "lunch") || null;
-    const dinner = dayMeals.find((m) => (m.type || "Dinner").toLowerCase() === "dinner") || null;
+    // A hand-planned day (Menu tab) overrides the generated plan: Kids becomes
+    // the lunch, the menu dinner + cook win. Non-menu days keep the generated
+    // Scheduled Meals + cadence cook (so months without a menu are unchanged).
+    const md = menuDetail.get(targetDateStr);
+    const lunch = md
+      ? (md.kids ? { name: md.kids, prepTime: "" } : null)
+      : (dayMeals.find((m) => (m.type || "").toLowerCase() === "lunch") || null);
+    const dinner = md
+      ? (md.dinner ? { name: md.dinner, prepTime: "" } : null)
+      : (dayMeals.find((m) => (m.type || "Dinner").toLowerCase() === "dinner") || null);
+    const cook = (md && cookToParent(md.cook)) || cookForDate(targetDateStr);
 
     // Events touching this day. A multi-day all-day span (e.g. a trip) carries
     // an endDate, so it shows on every day it covers; timed events land on their
@@ -80,14 +90,26 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       })
       .sort((a, b) => (a.time === "All Day" ? 0 : 1) - (b.time === "All Day" ? 0 : 1));
 
-    return { index: i, dayNameShort, dayNum, monthShort, lunch, dinner, isToday: i === 0, targetDateStr, dayEvents };
+    return { index: i, dayNameShort, dayNum, monthShort, lunch, dinner, cook, isToday: i === 0, targetDateStr, dayEvents };
   });
+
+  // "This week's prep" — the same-all-week breakfast + adult lunches, shown once
+  // above the week band when the rolling window includes a hand-planned week.
+  const weekPrep = (() => {
+    for (const d of days) {
+      const m = menuDetail.get(d.targetDateStr);
+      if (m && (m.breakfast || m.lunchLatoya || m.lunchAdebowale)) {
+        return { breakfast: m.breakfast, lunchLatoya: m.lunchLatoya, lunchAdebowale: m.lunchAdebowale };
+      }
+    }
+    return null;
+  })();
 
   const filteredDays =
     cookFilter === "all"
       ? days
       : days.filter(
-          (d) => (d.dinner || d.lunch) && cookMatchesFilter(cookForDate(d.targetDateStr), cookFilter)
+          (d) => (d.dinner || d.lunch) && cookMatchesFilter(d.cook, cookFilter)
         );
 
   const todaysDinner = days[0].dinner;
@@ -120,7 +142,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
               <div className="tonight-body">
                 <div className="ovl-row">
                   <span className="ovl">Tonight&rsquo;s Dinner</span>
-                  <span className={cookMeta(cookForDate(days[0].targetDateStr)).cls}>{cookMeta(cookForDate(days[0].targetDateStr)).label}</span>
+                  <span className={cookMeta(days[0].cook).cls}>{cookMeta(days[0].cook).label}</span>
                 </div>
 
                 <h2 className="hero-title">{todaysDinner.name}</h2>
@@ -150,7 +172,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   {todaysLunch ? (
                     <>
                       <span className="nm">{todaysLunch.name}</span>
-                      <span className={cookMeta(cookForDate(days[0].targetDateStr)).cls}>{cookMeta(cookForDate(days[0].targetDateStr)).label}</span>
+                      <span className={cookMeta(days[0].cook).cls}>{cookMeta(days[0].cook).label}</span>
                       <span className="mt">{todaysLunch.prepTime}</span>
                     </>
                   ) : (
@@ -163,7 +185,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                 {tomorrowsDinner && tomorrowsDinner.name !== "No meal scheduled" && (
                   <div className="hero-tmrw">
                     Tomorrow — <b>{tomorrowsDinner.name}</b>
-                    <span className={cookMeta(cookForDate(days[1].targetDateStr)).cls}>{cookMeta(cookForDate(days[1].targetDateStr)).label}</span>
+                    <span className={cookMeta(days[1].cook).cls}>{cookMeta(days[1].cook).label}</span>
                   </div>
                 )}
               </div>
@@ -266,6 +288,21 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           <span className="week-cap">{weekCap}</span>
         </div>
 
+        {weekPrep && (
+          <div className="dash-prep">
+            <span className="dash-prep-lead">This week&rsquo;s prep</span>
+            {weekPrep.breakfast && (
+              <span className="dash-prep-item"><span className="ml-tag b">B</span>{weekPrep.breakfast}</span>
+            )}
+            {weekPrep.lunchLatoya && (
+              <><span className="dash-prep-sep">·</span><span className="dash-prep-item"><span className="ml-tag l">L</span>{weekPrep.lunchLatoya}</span></>
+            )}
+            {weekPrep.lunchAdebowale && (
+              <><span className="dash-prep-sep">·</span><span className="dash-prep-item"><span className="ml-tag a">A</span>{weekPrep.lunchAdebowale}</span></>
+            )}
+          </div>
+        )}
+
         <div
           className="days"
           style={{ gridTemplateColumns: `repeat(${Math.max(filteredDays.length, 1)}, 1fr)` }}
@@ -295,7 +332,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   </div>
                   <div className="m-name">{day.lunch.name}</div>
                   <div className="m-cook">
-                    <span className={cookMeta(cookForDate(day.targetDateStr)).cls}>{cookMeta(cookForDate(day.targetDateStr)).label}</span>
+                    <span className={cookMeta(day.cook).cls}>{cookMeta(day.cook).label}</span>
                   </div>
                 </div>
               ) : (
@@ -321,7 +358,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                   </div>
                   <div className="m-name">{day.dinner.name}</div>
                   <div className="m-cook">
-                    <span className={cookMeta(cookForDate(day.targetDateStr)).cls}>{cookMeta(cookForDate(day.targetDateStr)).label}</span>
+                    <span className={cookMeta(day.cook).cls}>{cookMeta(day.cook).label}</span>
                   </div>
                 </div>
               ) : (
