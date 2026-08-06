@@ -16,6 +16,7 @@ export default function Navigation() {
     { name: "Chores", path: "/chores" },
     { name: "Chores History", path: "/history" },
     { name: "Monthly", path: "/monthly" },
+    { name: "Dad's Plan", path: "/plan" },
     { name: "By Person", path: "/byperson" },
     { name: "Groceries", path: "/groceries" },
   ];
