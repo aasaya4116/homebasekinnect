@@ -12,13 +12,13 @@ export default async function ByPerson() {
   ];
 
   return (
-    <div style={{ padding: '0 2rem 2rem', flex: 1, minHeight: 0, overflowY: 'auto' }}>
+    <div className="bp-page" style={{ padding: '0 2rem 2rem', flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2.5rem', margin: 0, fontWeight: 700, letterSpacing: '-0.02em' }}>By Person</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Individual schedules for Today</p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+      <div className="bp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
         {familyMembers.map((member) => {
           // Filter events for this specific person AND family events
           const memberEvents = events.filter(e => 

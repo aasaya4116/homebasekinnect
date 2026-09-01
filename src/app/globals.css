@@ -1408,3 +1408,95 @@ button, a, .btn-primary, .wall-nav-link, .seg a { touch-action: manipulation; }
   .mem-photo { transition: none; }
   * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
+
+/* ============================================================
+   MOBILE / PHONE LAYOUT (<=760px)
+   The wall runs at 1920px, so it never matches this block and is
+   left exactly as-is. On phones the fixed kiosk unlocks into a
+   scrollable, single-column app.
+   ============================================================ */
+@media (max-width: 760px) {
+  /* --- unlock scrolling (kiosk no-scroll lock lifted) --- */
+  html, body { overflow-x: hidden; overflow-y: auto; height: auto; min-height: 100dvh; }
+  .container { height: auto; max-height: none; overflow: visible; padding: 8px 12px 28px; gap: 12px; }
+
+  /* --- header becomes brand row + swipeable nav strip --- */
+  .wall-nav { flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 2px 0 10px; }
+  .wall-nav-brand { font-size: 1.05rem; letter-spacing: 0.06em; order: 1; }
+  .nav-right { order: 2; flex-basis: 100%; width: 100%; margin-left: 0; gap: 10px 12px; flex-wrap: wrap; justify-content: flex-end; }
+  .wall-nav-links {
+    order: 3; flex-basis: 100%; width: 100%; flex-wrap: nowrap;
+    overflow-x: auto; gap: 8px; padding-bottom: 2px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .wall-nav-links::-webkit-scrollbar { display: none; }
+  .wall-nav-link { flex: none; white-space: nowrap; font-size: 0.9rem; padding: 8px 14px; min-height: 40px; }
+  .clock-time { display: none; }   /* phone already shows the time in its status bar */
+  .wx-desc { display: none; }      /* keep the temperature, drop the long condition text */
+  .theme-seg button { padding: 6px 11px; font-size: 0.8rem; min-height: 0; }
+  .btn-primary.sm { padding: 8px 12px; font-size: 0.85rem; }
+
+  /* --- dashboard: stack hero, list the week --- */
+  .dashboard-container { overflow: visible; height: auto; }
+  .hero-row { display: flex; flex-direction: column; gap: 12px; flex: none; overflow: visible; }
+  .tonight { flex-direction: column; }
+  .tonight-photo { width: 100%; height: 170px; order: -1; }
+  .tonight-body { padding: 15px 17px; }
+  .hero-title { font-size: 1.9rem; margin-top: 10px; }
+  .hero-meta { font-size: 1rem; margin-top: 8px; }
+  .hero-lunch { margin-top: 12px; padding-top: 12px; flex-wrap: wrap; }
+  .hero-lunch .nm { font-size: 1.15rem; }
+  .hero-lunch .mt { display: none; } /* drop the secondary lunch prep-time to avoid the edge clip */
+  .hero-tmrw { font-size: 0.95rem; }
+  .trio2 { display: flex; flex-direction: column; gap: 12px; }
+  .mini { padding: 15px 17px; }
+  .mini-val { font-size: 1.35rem; }
+  .mem { height: 150px; }
+  .week-band { flex: none; }
+  .week-head { flex-wrap: wrap; gap: 10px; }
+  .days { grid-template-columns: 1fr; gap: 10px; }
+  .day { overflow: visible; }
+  .meal { flex: none; }
+
+  /* --- monthly: keep 7 columns, unlock height, shrink for phone --- */
+  .cal-shell { height: auto; overflow: visible; padding-bottom: 20px; }
+  .cal-title { font-size: 1.3rem; }
+  .cal-nav { width: 44px; height: 44px; }
+  /* Hard-cap the whole calendar chain to its container so 7 columns fit the
+     viewport instead of sizing to content. min-width:0 lets each level shrink,
+     max-width:100% stops content from forcing any level wider than its parent. */
+  .dashboard-container, .cal-shell, .cal-body, .cal-week,
+  .cal-headrow, .cal-days, .cal-banners { min-width: 0; max-width: 100%; }
+  .cal-body { grid-template-rows: none !important; grid-template-columns: minmax(0, 1fr) !important; }
+  .cal-headrow, .cal-days, .cal-banners { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+  .cal-week { min-height: 92px; }
+  .cal-days { gap: 4px; }
+  .cal-cell { min-height: 90px; padding: 6px 6px 5px; min-width: 0; }
+  .cal-daynum { font-size: 1rem; }
+  .cal-chip { font-size: 0.7rem; padding: 3px 5px; }
+  .cal-wd { font-size: 0.72rem; }
+  .cal-banner { font-size: 0.68rem; padding: 2px 6px; min-width: 0; }
+
+  /* --- chores / plan / history page shells --- */
+  .chores-page, .history-page, .plan-page {
+    flex: none; min-height: 0; overflow: visible;
+    padding-left: 14px; padding-right: 14px;
+  }
+  .chores-head h1, .history-head h1, .plan-head h1 { font-size: 1.5rem; }
+  .chores-grid { grid-template-columns: 1fr !important; }
+  .chores-tally { grid-auto-flow: row; grid-auto-columns: auto; }
+  .plan-grid { grid-template-columns: 1fr !important; }
+  .cal-prep { grid-template-columns: 1fr !important; }
+
+  /* history: stack kids, let the chore x 7-day grid scroll sideways */
+  .history-grid { grid-template-columns: 1fr !important; }
+  .hist-week { max-height: none; overflow-x: auto; }
+  .hw-row { min-width: 520px; }
+
+  /* --- by-person & groceries (inline-styled roots, classed for override) --- */
+  .bp-page, .groceries-page {
+    flex: none !important; min-height: auto !important; overflow: visible !important;
+    height: auto; padding-left: 14px !important; padding-right: 14px !important;
+  }
+  .bp-grid { grid-template-columns: 1fr !important; }
+}

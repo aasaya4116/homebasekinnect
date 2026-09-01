@@ -15,8 +15,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Zoom stays enabled for phone users; the wall never pinch-zooms anyway.
 };
 
 import Navigation from "@/components/Navigation";

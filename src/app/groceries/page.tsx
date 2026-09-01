@@ -30,7 +30,7 @@ export default async function Groceries() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 0.25rem 1rem' }}>
+    <div className="groceries-page" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 0.25rem 1rem' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

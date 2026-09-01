@@ -123,6 +123,7 @@ export default function Weather() {
             {weather.tempF}°
           </span>
           <span
+            className="wx-desc"
             style={{
               fontSize: "1rem",
               fontWeight: 500,
