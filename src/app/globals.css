@@ -1454,7 +1454,7 @@ button, a, .btn-primary, .wall-nav-link, .seg a { touch-action: manipulation; }
   .mem { height: 150px; }
   .week-band { flex: none; }
   .week-head { flex-wrap: wrap; gap: 10px; }
-  .days { grid-template-columns: 1fr; gap: 10px; }
+  .days { grid-template-columns: 1fr !important; gap: 10px; } /* !important beats the inline repeat(N,1fr) */
   .day { overflow: visible; }
   .meal { flex: none; }
 
