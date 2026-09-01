@@ -1434,7 +1434,9 @@ button, a, .btn-primary, .wall-nav-link, .seg a { touch-action: manipulation; }
   .clock-time { display: none; }   /* phone already shows the time in its status bar */
   .wx-desc { display: none; }      /* keep the temperature, drop the long condition text */
   .theme-seg button { padding: 6px 11px; font-size: 0.8rem; min-height: 0; }
-  .btn-primary.sm { padding: 8px 12px; font-size: 0.85rem; }
+  /* Regenerate becomes icon-only in the header so it never clips off the edge
+     (font-size:0 hides the label text; the fixed-size SVG icon stays). */
+  .nav-right .btn-primary.sm { font-size: 0; padding: 8px 10px; gap: 0; }
 
   /* --- dashboard: stack hero, list the week --- */
   .dashboard-container { overflow: visible; height: auto; }
@@ -1457,6 +1459,7 @@ button, a, .btn-primary, .wall-nav-link, .seg a { touch-action: manipulation; }
   .days { grid-template-columns: 1fr !important; gap: 10px; } /* !important beats the inline repeat(N,1fr) */
   .day { overflow: visible; }
   .meal { flex: none; }
+  .m-time { display: none; } /* drop the secondary prep-time in the week list to avoid the edge clip */
 
   /* --- monthly: keep 7 columns, unlock height, shrink for phone --- */
   /* overflow-x on the shell gives it a definite width so the 7 columns resolve
