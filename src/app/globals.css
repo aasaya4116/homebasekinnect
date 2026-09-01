@@ -1459,7 +1459,9 @@ button, a, .btn-primary, .wall-nav-link, .seg a { touch-action: manipulation; }
   .meal { flex: none; }
 
   /* --- monthly: keep 7 columns, unlock height, shrink for phone --- */
-  .cal-shell { height: auto; overflow: visible; padding-bottom: 20px; }
+  /* overflow-x on the shell gives it a definite width so the 7 columns resolve
+     to fit (instead of growing to content); if they still don't, it swipes. */
+  .cal-shell { height: auto; overflow-x: auto; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
   .cal-title { font-size: 1.3rem; }
   .cal-nav { width: 44px; height: 44px; }
   /* Hard-cap the whole calendar chain to its container so 7 columns fit the
