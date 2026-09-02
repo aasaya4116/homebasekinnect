@@ -39,6 +39,7 @@ type QuestBase = {
   prompt: string;
   reward: number;
   skill: ChessSkill;
+  practice?: boolean;
 };
 
 type MoveQuest = QuestBase & {
@@ -211,6 +212,138 @@ const QUESTS: Quest[] = [
   },
 ];
 
+const PRACTICE_QUESTS: Quest[] = [
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-knight-corner",
+    number: 0,
+    title: "The Knight's Corner Escape",
+    eyebrow: "Bonus movement",
+    lesson: "A knight near the corner has fewer choices, but its L-shaped leap still works the same way.",
+    prompt: "Free the knight by moving it from a1 to b3.",
+    hint: "Move two ranks upward and one file to the right.",
+    reward: 0,
+    skill: "Knight",
+    from: "a1",
+    to: "b3",
+    pieces: {
+      a1: { color: "white", kind: "knight" },
+      b1: { color: "white", kind: "bishop" },
+      a2: { color: "white", kind: "pawn" },
+      b2: { color: "white", kind: "pawn" },
+      e1: { color: "white", kind: "king" },
+      e8: { color: "black", kind: "king" },
+    },
+  },
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-rook-sweep",
+    number: 0,
+    title: "The Rook's File Sweep",
+    eyebrow: "Bonus capture",
+    lesson: "A rook controls every open square along its rank or file.",
+    prompt: "Sweep up the pawn by moving the rook from h1 to h7.",
+    hint: "Keep the rook on the h-file and travel straight upward.",
+    reward: 0,
+    skill: "Rook",
+    from: "h1",
+    to: "h7",
+    pieces: {
+      h1: { color: "white", kind: "rook" },
+      e1: { color: "white", kind: "king" },
+      h7: { color: "black", kind: "pawn" },
+      e8: { color: "black", kind: "king" },
+    },
+  },
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-bishop-crossing",
+    number: 0,
+    title: "The Bishop's Long Crossing",
+    eyebrow: "Bonus diagonal",
+    lesson: "Before moving a bishop, trace every square along its diagonal path.",
+    prompt: "Send the bishop from g2 to capture the rook on b7.",
+    hint: "Trace the path through f3, e4, d5, and c6.",
+    reward: 0,
+    skill: "Bishop",
+    from: "g2",
+    to: "b7",
+    pieces: {
+      g2: { color: "white", kind: "bishop" },
+      e1: { color: "white", kind: "king" },
+      b7: { color: "black", kind: "rook" },
+      e8: { color: "black", kind: "king" },
+    },
+  },
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-knight-fork",
+    number: 0,
+    title: "The Double-Threat Fork",
+    eyebrow: "Bonus tactic",
+    lesson: "The strongest forks attack two important pieces while keeping the knight safe.",
+    prompt: "Move the knight from f5 to d6 to fork the king and queen.",
+    hint: "From d6, the knight attacks both b7 and e8.",
+    reward: 0,
+    skill: "Fork",
+    from: "f5",
+    to: "d6",
+    pieces: {
+      f5: { color: "white", kind: "knight" },
+      e1: { color: "white", kind: "king" },
+      b7: { color: "black", kind: "king" },
+      e8: { color: "black", kind: "queen" },
+      c7: { color: "black", kind: "pawn" },
+    },
+  },
+  {
+    kind: "quiz",
+    practice: true,
+    id: "practice-fundamentals-two",
+    number: 0,
+    title: "The Fundamentals Remix",
+    eyebrow: "Bonus knowledge check",
+    lesson: "Strengthen the building blocks that make every future tactic easier to spot.",
+    prompt: "Answer at least 3 of 4 fresh questions correctly.",
+    reward: 0,
+    skill: "Fundamentals",
+    questions: [
+      {
+        id: "king-distance",
+        prompt: "How far can a king normally move on one turn?",
+        choices: ["One square", "Two squares", "Any distance", "Only diagonally"],
+        answer: "One square",
+        explanation: "The king normally moves one square in any direction, as long as that square is safe.",
+      },
+      {
+        id: "queen-combination",
+        prompt: "The queen combines the movement of which two pieces?",
+        choices: ["Rook and bishop", "Knight and pawn", "King and knight", "Bishop and pawn"],
+        answer: "Rook and bishop",
+        explanation: "The queen travels in straight lines like a rook and diagonally like a bishop.",
+      },
+      {
+        id: "pawn-capture",
+        prompt: "In which direction does a pawn capture?",
+        choices: ["Straight ahead", "Diagonally forward", "Straight backward", "Sideways"],
+        answer: "Diagonally forward",
+        explanation: "Pawns move straight ahead but capture one square diagonally forward.",
+      },
+      {
+        id: "check-meaning",
+        prompt: "What does it mean when a king is in check?",
+        choices: ["The king is under attack", "The queen was captured", "The game is a draw", "A pawn promoted"],
+        answer: "The king is under attack",
+        explanation: "A checked king is threatened and the next move must remove that threat.",
+      },
+    ],
+  },
+];
+
 function freshProgress(): ProgressMap {
   return Object.fromEntries(CHESS_PLAYERS.map((player) => [player, emptyPlayerProgress()]));
 }
@@ -268,6 +401,19 @@ function recommendedQuestIndex(progress: ChessPlayerProgress, today: string, pla
   return weakest[stableDayIndex(`${today}-${player}`, weakest.length)].index;
 }
 
+function nextPracticeQuest(
+  progress: ChessPlayerProgress,
+  currentQuestId: string,
+  today: string,
+  player: ChessPlayer,
+  round: number
+) {
+  const available = PRACTICE_QUESTS.filter((quest) => quest.id !== currentQuestId);
+  const weakestScore = Math.min(...available.map((quest) => progress.mastery[quest.skill]));
+  const weakest = available.filter((quest) => progress.mastery[quest.skill] === weakestScore);
+  return weakest[stableDayIndex(`${today}-${player}-${round}`, weakest.length)];
+}
+
 function updateLocalProgress(
   progress: ChessPlayerProgress,
   quest: Quest,
@@ -276,7 +422,7 @@ function updateLocalProgress(
   passed: boolean,
   today: string
 ) {
-  const firstCompletion = passed && !progress.completed.includes(quest.id);
+  const firstCompletion = !quest.practice && passed && !progress.completed.includes(quest.id);
   const sessionPercent = Math.round((Math.max(0, score) / Math.max(1, maxScore)) * 100);
   const previousMastery = progress.mastery[quest.skill];
   const mastery = {
@@ -318,6 +464,8 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
   const [player, setPlayer] = useState<ChessPlayer>("Mekhi");
   const [progress, setProgress] = useState<ProgressMap>(initialProgress);
   const [questIndex, setQuestIndex] = useState(() => recommendedQuestIndex(initialProgress.Mekhi, todayKey, "Mekhi"));
+  const [practiceQuest, setPracticeQuest] = useState<Quest | null>(null);
+  const [practiceRound, setPracticeRound] = useState(0);
   const [pieces, setPieces] = useState<Record<string, Piece>>(() =>
     QUESTS[questIndex].kind === "move" ? copyPieces(QUESTS[questIndex].pieces) : {}
   );
@@ -336,10 +484,10 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
   const [weeklyXp, setWeeklyXp] = useState(initialSnapshot.weeklyXp);
   const [syncStatus, setSyncStatus] = useState<"Synced" | "Saving…" | "Saved on this screen">("Synced");
 
-  const quest = QUESTS[questIndex];
+  const quest = practiceQuest ?? QUESTS[questIndex];
   const playerProgress = progress[player] ?? emptyPlayerProgress();
   const dailyQuestIndex = recommendedQuestIndex(playerProgress, todayKey, player);
-  const completedCount = playerProgress.completed.length;
+  const completedCount = QUESTS.filter((item) => playerProgress.completed.includes(item.id)).length;
   const progressPercent = Math.round((completedCount / QUESTS.length) * 100);
   const quizQuestion = quest.kind === "quiz" ? quest.questions[quizQuestionIndex] : null;
 
@@ -378,9 +526,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
     }
   }, [progress, ready]);
 
-  const resetQuest = (nextIndex = questIndex) => {
-    const nextQuest = QUESTS[nextIndex];
-    setQuestIndex(nextIndex);
+  const prepareQuest = (nextQuest: Quest) => {
     setPieces(nextQuest.kind === "move" ? copyPieces(nextQuest.pieces) : {});
     setSelected(null);
     setFeedback(nextQuest.kind === "quiz" ? "Answer 3 of 4 correctly to pass." : "Choose the glowing piece to begin.");
@@ -394,8 +540,18 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
     setQuizFinished(false);
   };
 
+  const resetQuest = (nextIndex = questIndex) => {
+    const nextQuest = QUESTS[nextIndex];
+    setPracticeQuest(null);
+    setQuestIndex(nextIndex);
+    prepareQuest(nextQuest);
+  };
+
+  const restartCurrentQuest = () => prepareQuest(quest);
+
   const choosePlayer = (nextPlayer: ChessPlayer) => {
     setPlayer(nextPlayer);
+    setPracticeRound(0);
     const nextProgress = progress[nextPlayer] ?? emptyPlayerProgress();
     resetQuest(recommendedQuestIndex(nextProgress, todayKey, nextPlayer));
   };
@@ -448,6 +604,14 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
       setWeeklyXp(result.snapshot.weeklyXp);
       setSyncStatus("Synced");
     }).catch(() => setSyncStatus("Saved on this screen"));
+  };
+
+  const startNextChallenge = () => {
+    const nextRound = practiceRound + 1;
+    const nextQuest = nextPracticeQuest(playerProgress, quest.id, todayKey, player, nextRound);
+    setPracticeRound(nextRound);
+    setPracticeQuest(nextQuest);
+    prepareQuest(nextQuest);
   };
 
   const handleSquare = (square: string) => {
@@ -578,7 +742,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
             {QUESTS.map((item, index) => {
               const complete = playerProgress.completed.includes(item.id);
               const unlocked = isUnlocked(index);
-              const active = index === questIndex;
+              const active = !practiceQuest && index === questIndex;
               return (
                 <button
                   type="button"
@@ -702,12 +866,22 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
               ) : (
                 <div className={`quiz-result${won ? " passed" : ""}`}>
                   <div className="quiz-result-icon">{won ? <Trophy size={34} /> : <RotateCcw size={32} />}</div>
-                  <span className="ovl">Knowledge check complete</span>
-                  <h2>{won ? "Trail mastered!" : "Almost there"}</h2>
+                  <span className="ovl">{quest.practice ? "Practice challenge complete" : "Knowledge check complete"}</span>
+                  <h2>{won ? quest.practice ? "Challenge cleared!" : "Trail mastered!" : "Almost there"}</h2>
                   <strong>{quizCorrect} / {quest.questions.length}</strong>
-                  <p>{won ? `You earned ${quest.reward} XP and completed the adventure.` : "Review the explanations, then take another run at the trial."}</p>
-                  {!won && (
-                    <button type="button" className="btn-primary" onClick={() => resetQuest()}>
+                  <p>
+                    {won
+                      ? quest.practice
+                        ? "Mastery updated. Keep playing or return to any lesson on the trail."
+                        : `You earned ${quest.reward} XP and completed the adventure.`
+                      : "Review the explanations, then take another run at the trial."}
+                  </p>
+                  {won ? (
+                    <button type="button" className="btn-primary" onClick={startNextChallenge}>
+                      Next challenge <ChevronRight size={17} />
+                    </button>
+                  ) : (
+                    <button type="button" className="btn-primary" onClick={restartCurrentQuest}>
                       Try the quiz again <RotateCcw size={17} />
                     </button>
                   )}
@@ -724,9 +898,9 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
         </section>
 
         <aside className="chess-mission widget">
-          <div className="mission-number">Quest {quest.number}</div>
+          <div className="mission-number">{quest.practice ? "Bonus challenge" : `Quest ${quest.number}`}</div>
           <span className="ovl">
-            {questIndex === dailyQuestIndex ? "Today’s focus" : quest.kind === "quiz" ? "Knowledge checkpoint" : "Practice trail"}
+            {quest.practice ? "Keep playing" : questIndex === dailyQuestIndex ? "Today’s focus" : quest.kind === "quiz" ? "Knowledge checkpoint" : "Practice trail"}
           </span>
           <h2>{quest.title}</h2>
           <p className="mission-lesson">{quest.lesson}</p>
@@ -742,7 +916,11 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
               </div>
             ) : (
               <div className="quiz-topic-list">
-                <span>Knight</span><span>Rook</span><span>Bishop</span><span>Fork</span>
+                {quest.practice ? (
+                  <><span>King</span><span>Queen</span><span>Pawn</span><span>Check</span></>
+                ) : (
+                  <><span>Knight</span><span>Rook</span><span>Bishop</span><span>Fork</span></>
+                )}
               </div>
             )}
           </div>
@@ -773,18 +951,28 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
           <div className="mission-reward">
             <div className="reward-medallion"><Star size={22} /></div>
             <div>
-              <span>Quest reward</span>
-              <strong>+{quest.reward} XP</strong>
+              <span>{quest.practice ? "Practice reward" : "Quest reward"}</span>
+              <strong>{quest.practice ? "Mastery + session" : `+${quest.reward} XP`}</strong>
             </div>
           </div>
 
           <div className="mission-actions">
-            <button type="button" className="chess-reset" onClick={() => resetQuest()}>
+            <button type="button" className="chess-reset" onClick={restartCurrentQuest}>
               <RotateCcw size={17} /> {quest.kind === "quiz" ? "Restart quiz" : "Reset board"}
             </button>
-            {won && questIndex < QUESTS.length - 1 && (
+            {won && !quest.practice && questIndex < QUESTS.length - 1 && (
               <button type="button" className="btn-primary chess-next" onClick={nextQuest}>
                 Next quest <ChevronRight size={18} />
+              </button>
+            )}
+            {won && quest.practice && quest.kind === "move" && (
+              <button type="button" className="btn-primary chess-next" onClick={startNextChallenge}>
+                Next challenge <ChevronRight size={18} />
+              </button>
+            )}
+            {!quest.practice && !won && completedCount === QUESTS.length && (
+              <button type="button" className="btn-primary chess-next" onClick={startNextChallenge}>
+                Next challenge <ChevronRight size={18} />
               </button>
             )}
           </div>
