@@ -51,19 +51,8 @@ export type MenuDay = {
 export const MENU_TAB = "Menu";
 export const MENU_HEADER = ["Date", "Breakfast", "Latoya Lunch", "Adebowale Lunch", "Kids", "Dinner", "Cook"];
 
-// Adebowale's personal fitness meal plan — a repeating weekly template (Mon–Sun),
-// five eating occasions a day, kept in its own tab and shown on its own page so it
-// never crowds the shared family calendar.
-export type PlanDay = {
-  day: string;        // "Mon" … "Sun"
-  focus: string;      // "Workout" | "Rest"
-  preWorkout: string;
-  breakfast: string;
-  lunch: string;
-  snack: string;
-  dinner: string;
-};
-
+// Retained for the local Sheet seed utility. Dad's Plan is no longer exposed
+// as an application route or navigation destination.
 export const PLAN_TAB = "Adebowale Plan";
 export const PLAN_HEADER = ["Day", "Focus", "Pre-Workout", "Breakfast", "Lunch", "Snack", "Dinner"];
 
@@ -322,32 +311,6 @@ export async function getMenuDetail(): Promise<Map<string, MenuDay>> {
     console.log("No Menu tab found (using generated schedule):", error.message);
   }
   return map;
-}
-
-/** Read Adebowale's weekly plan template (Mon–Sun) from its tab. Missing tab
- *  returns an empty array (page then shows an empty state). */
-export async function getAdebowalePlan(): Promise<PlanDay[]> {
-  try {
-    const sheets = google.sheets({ version: 'v4', auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `'${PLAN_TAB}'!A2:G20`,
-    });
-    return (res.data.values || [])
-      .filter((r) => r[0])
-      .map((r) => ({
-        day: String(r[0]).trim(),
-        focus: (r[1] || "").trim(),
-        preWorkout: (r[2] || "").trim(),
-        breakfast: (r[3] || "").trim(),
-        lunch: (r[4] || "").trim(),
-        snack: (r[5] || "").trim(),
-        dinner: (r[6] || "").trim(),
-      }));
-  } catch (error: any) {
-    console.log("No Adebowale Plan tab found:", error.message);
-    return [];
-  }
 }
 
 /** Update a hand-planned day's Dinner (or Kids lunch) cell in the Menu tab.
