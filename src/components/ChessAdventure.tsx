@@ -68,6 +68,7 @@ type Quest = MoveQuest | QuizQuest;
 type ProgressMap = Record<string, ChessPlayerProgress>;
 
 const STORAGE_KEY = "homebase-chess-adventure-v1";
+const PRACTICE_HISTORY_STORAGE_KEY = "homebase-chess-practice-history-v1";
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
 
@@ -344,6 +345,138 @@ const PRACTICE_QUESTS: Quest[] = [
   },
 ];
 
+const EXTRA_PRACTICE_QUESTS: Quest[] = [
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-knight-center",
+    number: 0,
+    title: "The Knight's Center Hop",
+    eyebrow: "Bonus movement",
+    lesson: "Knights become more powerful near the center because more L-shaped routes are available.",
+    prompt: "Jump from d4 to f5 and capture the loose pawn.",
+    hint: "Move two files to the right and one rank upward.",
+    reward: 0,
+    skill: "Knight",
+    from: "d4",
+    to: "f5",
+    pieces: {
+      d4: { color: "white", kind: "knight" },
+      e1: { color: "white", kind: "king" },
+      f5: { color: "black", kind: "pawn" },
+      e8: { color: "black", kind: "king" },
+    },
+  },
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-rook-rank",
+    number: 0,
+    title: "The Rook's Sideways Strike",
+    eyebrow: "Bonus capture",
+    lesson: "Ranks run side to side, giving a rook a powerful horizontal lane when nothing blocks it.",
+    prompt: "Move the rook from b4 to g4 and capture the knight.",
+    hint: "Stay on the fourth rank and move straight to the right.",
+    reward: 0,
+    skill: "Rook",
+    from: "b4",
+    to: "g4",
+    pieces: {
+      b4: { color: "white", kind: "rook" },
+      e1: { color: "white", kind: "king" },
+      g4: { color: "black", kind: "knight" },
+      e8: { color: "black", kind: "king" },
+    },
+  },
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-bishop-rise",
+    number: 0,
+    title: "The Bishop's Rising Diagonal",
+    eyebrow: "Bonus diagonal",
+    lesson: "A bishop can cross the board quickly when its diagonal is open from end to end.",
+    prompt: "Move the bishop from a2 to e6 and capture the rook.",
+    hint: "Trace the diagonal through b3, c4, and d5.",
+    reward: 0,
+    skill: "Bishop",
+    from: "a2",
+    to: "e6",
+    pieces: {
+      a2: { color: "white", kind: "bishop" },
+      e1: { color: "white", kind: "king" },
+      e6: { color: "black", kind: "rook" },
+      h8: { color: "black", kind: "king" },
+    },
+  },
+  {
+    kind: "move",
+    practice: true,
+    id: "practice-center-fork",
+    number: 0,
+    title: "The Center-Square Fork",
+    eyebrow: "Bonus tactic",
+    lesson: "A knight can create a fork from the center even when its targets are far apart.",
+    prompt: "Leap from b3 to c5 to fork the king and queen.",
+    hint: "From c5, the knight attacks both b7 and d7.",
+    reward: 0,
+    skill: "Fork",
+    from: "b3",
+    to: "c5",
+    pieces: {
+      b3: { color: "white", kind: "knight" },
+      e1: { color: "white", kind: "king" },
+      b7: { color: "black", kind: "king" },
+      d7: { color: "black", kind: "queen" },
+      c6: { color: "black", kind: "pawn" },
+    },
+  },
+  {
+    kind: "quiz",
+    practice: true,
+    id: "practice-fundamentals-three",
+    number: 0,
+    title: "The Movement Mastery Quiz",
+    eyebrow: "Bonus knowledge check",
+    lesson: "Use movement rules and tactical awareness to solve a fresh set of chess questions.",
+    prompt: "Answer at least 3 of 4 new questions correctly.",
+    reward: 0,
+    skill: "Fundamentals",
+    questions: [
+      {
+        id: "knight-center-options",
+        prompt: "From a clear center square, how many destinations can a knight have at most?",
+        choices: ["Four", "Six", "Eight", "Ten"],
+        answer: "Eight",
+        explanation: "A centrally placed knight can reach as many as eight different squares.",
+      },
+      {
+        id: "rook-blocked",
+        prompt: "Can a rook jump over a piece that blocks its path?",
+        choices: ["Always", "Only over pawns", "Only when capturing", "No"],
+        answer: "No",
+        explanation: "Unlike a knight, a rook cannot jump over any piece in its path.",
+      },
+      {
+        id: "bishop-colors",
+        prompt: "A bishop begins on a dark square. Which squares can it visit?",
+        choices: ["Only dark squares", "Only light squares", "Either color", "Only center squares"],
+        answer: "Only dark squares",
+        explanation: "Diagonal movement keeps a bishop on its original square color for the entire game.",
+      },
+      {
+        id: "fork-priority",
+        prompt: "When a fork attacks your king and queen, what must you handle first?",
+        choices: ["Save the queen", "Move or protect the king", "Push a pawn", "Offer a draw"],
+        answer: "Move or protect the king",
+        explanation: "A threat to the king must always be answered before any other concern.",
+      },
+    ],
+  },
+];
+
+const PRACTICE_DECK = [...PRACTICE_QUESTS, ...EXTRA_PRACTICE_QUESTS];
+
 function freshProgress(): ProgressMap {
   return Object.fromEntries(CHESS_PLAYERS.map((player) => [player, emptyPlayerProgress()]));
 }
@@ -384,6 +517,21 @@ function mergeProgressMaps(cloud: ProgressMap, local?: ProgressMap | null): Prog
   );
 }
 
+function mergePracticeHistory(
+  cloud: Record<string, string[]>,
+  local?: Record<string, string[]> | null
+) {
+  const validIds = new Set(PRACTICE_DECK.map((quest) => quest.id));
+  return Object.fromEntries(
+    CHESS_PLAYERS.map((player) => [
+      player,
+      Array.from(new Set([...(local?.[player] || []), ...(cloud[player] || [])]))
+        .filter((id) => validIds.has(id))
+        .slice(0, PRACTICE_DECK.length),
+    ])
+  );
+}
+
 function stableDayIndex(value: string, length: number) {
   let hash = 0;
   for (const character of value) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
@@ -404,14 +552,24 @@ function recommendedQuestIndex(progress: ChessPlayerProgress, today: string, pla
 function nextPracticeQuest(
   progress: ChessPlayerProgress,
   currentQuestId: string,
+  recentIds: string[],
   today: string,
   player: ChessPlayer,
   round: number
 ) {
-  const available = PRACTICE_QUESTS.filter((quest) => quest.id !== currentQuestId);
+  const unseen = PRACTICE_DECK.filter(
+    (quest) => quest.id !== currentQuestId && !recentIds.includes(quest.id)
+  );
+  const resetCycle = unseen.length === 0;
+  const available = resetCycle
+    ? PRACTICE_DECK.filter((quest) => quest.id !== currentQuestId)
+    : unseen;
   const weakestScore = Math.min(...available.map((quest) => progress.mastery[quest.skill]));
   const weakest = available.filter((quest) => progress.mastery[quest.skill] === weakestScore);
-  return weakest[stableDayIndex(`${today}-${player}-${round}`, weakest.length)];
+  return {
+    quest: weakest[stableDayIndex(`${today}-${player}-${round}`, weakest.length)],
+    resetCycle,
+  };
 }
 
 function updateLocalProgress(
@@ -466,6 +624,9 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
   const [questIndex, setQuestIndex] = useState(() => recommendedQuestIndex(initialProgress.Mekhi, todayKey, "Mekhi"));
   const [practiceQuest, setPracticeQuest] = useState<Quest | null>(null);
   const [practiceRound, setPracticeRound] = useState(0);
+  const [recentPracticeIds, setRecentPracticeIds] = useState<Record<string, string[]>>(() =>
+    mergePracticeHistory(initialSnapshot.recentPracticeIds)
+  );
   const [pieces, setPieces] = useState<Record<string, Piece>>(() =>
     QUESTS[questIndex].kind === "move" ? copyPieces(QUESTS[questIndex].pieces) : {}
   );
@@ -489,19 +650,31 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
   const dailyQuestIndex = recommendedQuestIndex(playerProgress, todayKey, player);
   const completedCount = QUESTS.filter((item) => playerProgress.completed.includes(item.id)).length;
   const progressPercent = Math.round((completedCount / QUESTS.length) * 100);
+  const practiceCycleCount = Math.min(
+    recentPracticeIds[player]?.length || 0,
+    PRACTICE_DECK.length
+  );
   const quizQuestion = quest.kind === "quiz" ? quest.questions[quizQuestionIndex] : null;
 
   useEffect(() => {
     let savedProgress: ProgressMap | null = null;
+    let savedPracticeHistory: Record<string, string[]> | null = null;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) savedProgress = JSON.parse(saved) as ProgressMap;
+      const savedHistory = localStorage.getItem(PRACTICE_HISTORY_STORAGE_KEY);
+      if (savedHistory) savedPracticeHistory = JSON.parse(savedHistory) as Record<string, string[]>;
     } catch {
       // A private or locked-down kiosk may block storage; the quest still works.
     }
 
     // Defer the browser-only snapshot until after hydration has settled.
     const timer = window.setTimeout(() => {
+      setRecentPracticeIds(
+        savedPracticeHistory
+          ? mergePracticeHistory({}, savedPracticeHistory)
+          : mergePracticeHistory(initialSnapshot.recentPracticeIds)
+      );
       if (savedProgress) {
         const merged = mergeProgressMaps(initialSnapshot.players, savedProgress);
         setProgress(merged);
@@ -515,16 +688,17 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [initialSnapshot.players, todayKey]);
+  }, [initialSnapshot.players, initialSnapshot.recentPracticeIds, todayKey]);
 
   useEffect(() => {
     if (!ready) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      localStorage.setItem(PRACTICE_HISTORY_STORAGE_KEY, JSON.stringify(recentPracticeIds));
     } catch {
       // Keep play available even when the browser cannot persist progress.
     }
-  }, [progress, ready]);
+  }, [progress, ready, recentPracticeIds]);
 
   const prepareQuest = (nextQuest: Quest) => {
     setPieces(nextQuest.kind === "move" ? copyPieces(nextQuest.pieces) : {});
@@ -608,8 +782,24 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
 
   const startNextChallenge = () => {
     const nextRound = practiceRound + 1;
-    const nextQuest = nextPracticeQuest(playerProgress, quest.id, todayKey, player, nextRound);
+    const currentRecent = recentPracticeIds[player] || [];
+    const next = nextPracticeQuest(
+      playerProgress,
+      quest.id,
+      currentRecent,
+      todayKey,
+      player,
+      nextRound
+    );
+    const nextQuest = next.quest;
     setPracticeRound(nextRound);
+    setRecentPracticeIds((current) => ({
+      ...current,
+      [player]: next.resetCycle
+        ? [nextQuest.id]
+        : [nextQuest.id, ...(current[player] || []).filter((id) => id !== nextQuest.id)]
+            .slice(0, PRACTICE_DECK.length),
+    }));
     setPracticeQuest(nextQuest);
     prepareQuest(nextQuest);
   };
@@ -872,7 +1062,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
                   <p>
                     {won
                       ? quest.practice
-                        ? "Mastery updated. Keep playing or return to any lesson on the trail."
+                        ? `Challenge ${practiceCycleCount} of ${PRACTICE_DECK.length} complete. Mastery updated.`
                         : `You earned ${quest.reward} XP and completed the adventure.`
                       : "Review the explanations, then take another run at the trial."}
                   </p>
@@ -898,7 +1088,11 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
         </section>
 
         <aside className="chess-mission widget">
-          <div className="mission-number">{quest.practice ? "Bonus challenge" : `Quest ${quest.number}`}</div>
+          <div className="mission-number">
+            {quest.practice
+              ? `Bonus ${Math.max(1, practiceCycleCount)} of ${PRACTICE_DECK.length}`
+              : `Quest ${quest.number}`}
+          </div>
           <span className="ovl">
             {quest.practice ? "Keep playing" : questIndex === dailyQuestIndex ? "Today’s focus" : quest.kind === "quiz" ? "Knowledge checkpoint" : "Practice trail"}
           </span>

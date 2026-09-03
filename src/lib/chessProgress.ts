@@ -135,6 +135,21 @@ export async function getChessLearningSnapshot(today: string): Promise<ChessLear
         snapshot.weeklyXp += numberCell(row[7]);
       }
     }
+
+    for (let index = sessionRows.length - 1; index >= 0; index -= 1) {
+      const row = sessionRows[index];
+      const player = String(row[1] || "");
+      const questId = String(row[2] || "");
+      const recent = snapshot.recentPracticeIds[player];
+      if (
+        recent &&
+        questId.startsWith("practice-") &&
+        recent.length < 10 &&
+        !recent.includes(questId)
+      ) {
+        recent.push(questId);
+      }
+    }
   } catch (error) {
     console.log("Chess learning tabs not available yet:", error instanceof Error ? error.message : "Unknown error");
   }
