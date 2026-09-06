@@ -654,6 +654,14 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
     recentPracticeIds[player]?.length || 0,
     PRACTICE_DECK.length
   );
+  const practiceInProgress = Boolean(practiceQuest && !won);
+  const practiceButtonLabel = practiceInProgress
+    ? "Challenge in progress"
+    : practiceCycleCount === PRACTICE_DECK.length
+      ? "Start a new deck"
+      : practiceCycleCount > 0
+        ? "Continue practice"
+        : "Start practice deck";
   const quizQuestion = quest.kind === "quiz" ? quest.questions[quizQuestionIndex] : null;
 
   useEffect(() => {
@@ -954,6 +962,38 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
               );
             })}
           </div>
+
+          {completedCount === QUESTS.length && (
+            <section className="practice-deck-card" aria-label="Ten challenge practice deck">
+              <div className="practice-deck-head">
+                <div>
+                  <span className="ovl">Practice deck</span>
+                  <strong>{practiceCycleCount} of {PRACTICE_DECK.length} explored</strong>
+                </div>
+                <span className="practice-deck-count">10</span>
+              </div>
+              <div className="practice-deck-dots" aria-hidden="true">
+                {PRACTICE_DECK.map((item) => (
+                  <span
+                    key={item.id}
+                    className={`${recentPracticeIds[player]?.includes(item.id) ? "seen" : ""}${practiceQuest?.id === item.id ? " active" : ""}`}
+                  />
+                ))}
+              </div>
+              <small>
+                {practiceQuest
+                  ? quest.title
+                  : "Fresh puzzles and quizzes, ordered around weaker skills."}
+              </small>
+              <button
+                type="button"
+                disabled={practiceInProgress}
+                onClick={startNextChallenge}
+              >
+                {practiceButtonLabel} <ChevronRight size={16} />
+              </button>
+            </section>
+          )}
 
           <div className="chess-family-note">
             <Trophy size={20} />

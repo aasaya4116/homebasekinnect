@@ -1568,6 +1568,76 @@ button, a, .btn-primary, .wall-nav-link, .seg a { touch-action: manipulation; }
 .quest-chevron { margin-left: auto; flex: none; color: var(--text-tertiary); }
 .quest-row.active .quest-chevron { color: var(--gold); }
 
+.practice-deck-card {
+  flex: none;
+  margin-top: 14px;
+  padding: 13px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-md);
+  background: var(--gold-dim);
+}
+.practice-deck-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.practice-deck-head > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.practice-deck-head strong { font-size: 0.84rem; }
+.practice-deck-count {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold-fill);
+  color: var(--gold-ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.practice-deck-dots {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  margin: 10px 0 8px;
+}
+.practice-deck-dots span {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--bg-panel-hover);
+}
+.practice-deck-dots span.seen { background: var(--gold-fill); }
+.practice-deck-dots span.active { background: var(--em); box-shadow: 0 0 0 2px var(--em-dim); }
+.practice-deck-card > small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.practice-deck-card > button {
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gold-fill);
+  color: var(--gold-ink);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.practice-deck-card > button:disabled { cursor: default; opacity: 0.58; }
+
 .chess-family-note {
   margin-top: auto;
   display: flex;
