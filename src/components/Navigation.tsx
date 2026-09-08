@@ -14,10 +14,11 @@ export default function Navigation() {
   const navItems = [
     { name: "Dashboard", path: "/" },
     { name: "Chores", path: "/chores" },
-    { name: "Chores History", path: "/history" },
+    { name: "History", path: "/history" },
     { name: "Monthly", path: "/monthly" },
     { name: "By Person", path: "/byperson" },
-    { name: "Chess Adventure", path: "/chess" },
+    { name: "School", path: "/school" },
+    { name: "Chess", path: "/chess" },
   ];
 
   const isDashboard = pathname === "/";
