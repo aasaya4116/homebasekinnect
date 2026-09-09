@@ -132,10 +132,10 @@ export const SCHOOL_WEEKS: Record<"khalil" | "mekhi", SchoolWeek> = {
     meta: "Weekly homework · Sep 8–11",
     action: {
       label: "Due next",
-      title: "Complete and return the reading log",
-      note: "Read and log on the white form four times this week.",
-      date: "Due Thu",
-      icon: "notebook",
+      title: "Finish the Party Question word problem",
+      note: "Mekhi’s first deadline this week is the Math assignment.",
+      date: "Due Wed, Sep 9",
+      icon: "calculator",
     },
     subjects: [
       {
@@ -164,8 +164,10 @@ export const SCHOOL_WEEKS: Record<"khalil" | "mekhi", SchoolWeek> = {
       },
     ],
     dates: [
-      { month: "Sep", day: "8", title: "No school", detail: "Monday", schoolClosed: true },
+      { month: "Sep", day: "7", title: "No school", detail: "Labor Day · Monday", schoolClosed: true },
+      { month: "Sep", day: "9", title: "Party Question word problem due", detail: "Math · Wednesday" },
       { month: "Sep", day: "10", title: "Reading log due", detail: "Thursday" },
+      { month: "Sep", day: "10", title: "Factors and multiples due", detail: "Math · Thursday" },
       { month: "Sep", day: "11", title: "Math checkpoint", detail: "Friday" },
       { month: "Sep", day: "11", title: "Science assignment due", detail: "Friday" },
     ],
