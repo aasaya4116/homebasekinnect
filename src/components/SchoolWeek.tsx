@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import {
   Backpack,
   BookCheck,
   BookOpen,
   Calculator,
+  Check,
+  CheckCircle2,
   Divide,
   FileText,
   Globe2,
@@ -18,6 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { SchoolIcon, SchoolWeek as SchoolWeekData } from "@/lib/school";
+import { toggleSchoolTaskAction } from "@/app/school/actions";
 import styles from "@/app/school/school.module.css";
 
 const ICONS: Record<SchoolIcon, LucideIcon> = {
@@ -37,11 +40,42 @@ const ICONS: Record<SchoolIcon, LucideIcon> = {
 };
 
 type ChildKey = "khalil" | "mekhi";
+type CompletionToggle = { id: string; done: boolean };
 
-export default function SchoolWeek({ weeks }: { weeks: Record<ChildKey, SchoolWeekData> }) {
+export default function SchoolWeek({
+  weeks,
+  completedTaskIds,
+}: {
+  weeks: Record<ChildKey, SchoolWeekData>;
+  completedTaskIds: string[];
+}) {
   const [activeChild, setActiveChild] = useState<ChildKey>("khalil");
+  const [syncError, setSyncError] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const [optimisticCompletedIds, applyCompletion] = useOptimistic(
+    completedTaskIds,
+    (state: string[], toggle: CompletionToggle) =>
+      toggle.done
+        ? state.includes(toggle.id) ? state : [...state, toggle.id]
+        : state.filter((id) => id !== toggle.id)
+  );
+
   const week = weeks[activeChild];
-  const ActionIcon = ICONS[week.action.icon];
+  const completed = new Set(optimisticCompletedIds);
+  const taskDates = week.dates.filter((date) => date.task);
+  const nextTaskDate = taskDates.find((date) => date.task && !completed.has(date.task.id));
+  const nextTask = nextTaskDate?.task;
+  const allTasksDone = taskDates.length > 0 && !nextTask;
+  const ActionIcon = nextTask ? ICONS[nextTask.icon] : CheckCircle2;
+
+  const toggleTask = (taskId: string, done: boolean) => {
+    setSyncError("");
+    startTransition(async () => {
+      applyCompletion({ id: taskId, done });
+      const result = await toggleSchoolTaskAction(taskId, activeChild, done);
+      if (!result.success) setSyncError("Couldn’t sync that check-off. Please try again.");
+    });
+  };
 
   return (
     <main className={styles.page}>
@@ -60,7 +94,10 @@ export default function SchoolWeek({ weeks }: { weeks: Record<ChildKey, SchoolWe
               role="tab"
               aria-selected={activeChild === child}
               aria-controls="school-week-panel"
-              onClick={() => setActiveChild(child)}
+              onClick={() => {
+                setSyncError("");
+                setActiveChild(child);
+              }}
             >
               {weeks[child].child}
             </button>
@@ -68,16 +105,30 @@ export default function SchoolWeek({ weeks }: { weeks: Record<ChildKey, SchoolWe
         </div>
       </header>
 
-      <div className={styles.content} id="school-week-panel" role="tabpanel">
+      <div className={styles.content} id="school-week-panel" role="tabpanel" aria-busy={isPending}>
         <div className={styles.mainColumn}>
-          <section className={styles.action} aria-labelledby="school-action-title">
+          <section className={`${styles.action} ${allTasksDone ? styles.actionComplete : ""}`} aria-labelledby="school-action-title">
             <div className={styles.actionIcon} aria-hidden="true"><ActionIcon size={21} /></div>
-            <div className={styles.actionCopy}>
-              <span>{week.action.label}</span>
-              <h2 id="school-action-title">{week.action.title}</h2>
-              <p>{week.action.note}</p>
+            <div className={styles.actionCopy} aria-live="polite">
+              <span>{allTasksDone ? "Week complete" : week.child === "Khalil" ? "Family action" : "Due next"}</span>
+              <h2 id="school-action-title">{nextTask?.actionTitle || "Everything due this week is done"}</h2>
+              <p>{nextTask?.actionNote || "Every assignment and family action is checked off."}</p>
             </div>
-            <strong className={styles.dateChip}>{week.action.date}</strong>
+            <div className={styles.actionControls}>
+              <strong className={styles.dateChip}>{nextTask?.dueLabel || "All done"}</strong>
+              {nextTask && (
+                <button
+                  type="button"
+                  className={styles.completeButton}
+                  disabled={isPending}
+                  onClick={() => toggleTask(nextTask.id, true)}
+                >
+                  <Check size={17} aria-hidden="true" />
+                  Mark done
+                </button>
+              )}
+            </div>
+            {syncError && <p className={styles.syncError} role="alert">{syncError}</p>}
           </section>
 
           <section className={styles.learning} aria-labelledby="learning-title">
@@ -111,12 +162,30 @@ export default function SchoolWeek({ weeks }: { weeks: Record<ChildKey, SchoolWe
           <section className={styles.railSection}>
             <h2>Important dates</h2>
             <div className={styles.timeline}>
-              {week.dates.map((date, index) => (
-                <div className={`${styles.dateRow} ${date.schoolClosed ? styles.closed : ""}`} key={`${date.month}-${date.day}-${date.title}-${index}`}>
-                  <span className={styles.dateBox}>{date.month}<strong>{date.day}</strong></span>
-                  <span className={styles.dateCopy}><strong>{date.title}</strong><span>{date.detail}</span></span>
-                </div>
-              ))}
+              {week.dates.map((date, index) => {
+                const taskDone = Boolean(date.task && completed.has(date.task.id));
+                return (
+                  <div
+                    className={`${styles.dateRow} ${date.schoolClosed ? styles.closed : ""} ${taskDone ? styles.taskDone : ""}`}
+                    key={`${date.month}-${date.day}-${date.title}-${index}`}
+                  >
+                    <span className={styles.dateBox}>{date.month}<strong>{date.day}</strong></span>
+                    <span className={styles.dateCopy}><strong>{date.title}</strong><span>{date.detail}</span></span>
+                    {date.task && (
+                      <button
+                        type="button"
+                        className={styles.taskCheck}
+                        aria-label={`${taskDone ? "Mark incomplete" : "Mark complete"}: ${date.title}`}
+                        aria-pressed={taskDone}
+                        disabled={isPending}
+                        onClick={() => toggleTask(date.task!.id, !taskDone)}
+                      >
+                        <Check size={17} aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </section>
 

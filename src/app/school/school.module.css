@@ -98,6 +98,11 @@
   box-shadow: var(--shadow-widget);
 }
 
+.actionComplete {
+  border-color: var(--em);
+  background: var(--em-dim);
+}
+
 .actionIcon {
   width: 44px;
   height: 44px;
@@ -106,6 +111,11 @@
   border-radius: 50%;
   background: var(--gold-fill);
   color: var(--gold-ink);
+}
+
+.actionComplete .actionIcon {
+  background: var(--em);
+  color: #07130f;
 }
 
 .actionCopy { min-width: 0; }
@@ -122,6 +132,14 @@
 .actionCopy h2 { font-size: 1.15rem; }
 .actionCopy p { margin: 5px 0 0; color: var(--text-secondary); line-height: 1.35; }
 
+.actionControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
 .dateChip {
   padding: 9px 14px;
   border-radius: 999px;
@@ -130,6 +148,40 @@
   font-size: 0.9rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.completeButton {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid var(--em);
+  border-radius: 999px;
+  background: var(--em-dim);
+  color: var(--em);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.completeButton:hover { background: var(--em); color: #07130f; }
+.completeButton:active { transform: scale(0.97); }
+.completeButton:disabled,
+.taskCheck:disabled { cursor: wait; opacity: 0.55; }
+
+.actionComplete .dateChip { background: var(--em); color: #07130f; }
+
+.syncError {
+  grid-column: 2 / -1;
+  margin: -4px 0 0;
+  color: var(--accent-red);
+  font-size: 0.8rem;
+  text-align: right;
 }
 
 .learning {
@@ -222,7 +274,8 @@
 
 .dateRow {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
   gap: 10px;
   padding: 8px 0;
   border-top: 1px solid var(--border-color);
@@ -242,6 +295,32 @@
 .closed .dateBox,
 .closed .dateBox strong,
 .closed .dateCopy strong { color: var(--accent-orange); }
+
+.taskCheck {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.taskCheck:hover { border-color: var(--em); color: var(--em); }
+.taskCheck:active { transform: scale(0.94); }
+.taskCheck[aria-pressed="true"] {
+  border-color: var(--em);
+  background: var(--em);
+  color: #07130f;
+}
+
+.taskDone .dateBox,
+.taskDone .dateCopy { opacity: 0.56; }
+.taskDone .dateCopy strong { text-decoration: line-through; }
 
 .reminders { margin: 0; padding: 0; list-style: none; }
 .reminders li {
@@ -302,7 +381,8 @@
   .mainColumn,
   .rail { overflow: visible; }
   .action { grid-template-columns: auto minmax(0, 1fr); padding: 15px; }
-  .dateChip { grid-column: 2; justify-self: start; }
+  .actionControls { grid-column: 2; justify-content: flex-start; }
+  .syncError { grid-column: 1 / -1; text-align: left; }
   .learningGrid { grid-template-columns: 1fr; grid-template-rows: none; }
   .subject { min-height: auto; overflow: visible; }
 }
