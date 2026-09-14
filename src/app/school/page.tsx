@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import SchoolWeek from "@/components/SchoolWeek";
-import { SCHOOL_WEEKS } from "@/lib/school";
 import { getCompletedSchoolTaskIds } from "@/lib/schoolProgress";
+import { getSchoolDashboardData } from "@/lib/schoolStore";
 
 export const revalidate = 300;
 
@@ -11,6 +11,15 @@ export const metadata: Metadata = {
 };
 
 export default async function SchoolPage() {
-  const completedTaskIds = await getCompletedSchoolTaskIds();
-  return <SchoolWeek weeks={SCHOOL_WEEKS} completedTaskIds={completedTaskIds} />;
+  const [completedTaskIds, dashboard] = await Promise.all([
+    getCompletedSchoolTaskIds(),
+    getSchoolDashboardData(),
+  ]);
+  return (
+    <SchoolWeek
+      weeks={dashboard.weeks}
+      completedTaskIds={completedTaskIds}
+      pendingDraftCount={dashboard.drafts.length}
+    />
+  );
 }

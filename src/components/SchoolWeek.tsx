@@ -1,6 +1,7 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
+import Link from "next/link";
 import {
   Backpack,
   BookCheck,
@@ -19,7 +20,7 @@ import {
   Recycle,
   type LucideIcon,
 } from "lucide-react";
-import type { SchoolIcon, SchoolWeek as SchoolWeekData } from "@/lib/school";
+import type { SchoolChildKey, SchoolIcon, SchoolWeek as SchoolWeekData } from "@/lib/school";
 import { toggleSchoolTaskAction } from "@/app/school/actions";
 import styles from "@/app/school/school.module.css";
 
@@ -39,17 +40,18 @@ const ICONS: Record<SchoolIcon, LucideIcon> = {
   recycle: Recycle,
 };
 
-type ChildKey = "khalil" | "mekhi";
 type CompletionToggle = { id: string; done: boolean };
 
 export default function SchoolWeek({
   weeks,
   completedTaskIds,
+  pendingDraftCount,
 }: {
-  weeks: Record<ChildKey, SchoolWeekData>;
+  weeks: Record<SchoolChildKey, SchoolWeekData>;
   completedTaskIds: string[];
+  pendingDraftCount: number;
 }) {
-  const [activeChild, setActiveChild] = useState<ChildKey>("khalil");
+  const [activeChild, setActiveChild] = useState<SchoolChildKey>("khalil");
   const [syncError, setSyncError] = useState("");
   const [isPending, startTransition] = useTransition();
   const [optimisticCompletedIds, applyCompletion] = useOptimistic(
@@ -86,22 +88,28 @@ export default function SchoolWeek({
           <p className={styles.weekMeta}>{week.meta}</p>
         </div>
 
-        <div className={styles.childTabs} role="tablist" aria-label="Choose a child">
-          {(["khalil", "mekhi"] as const).map((child) => (
-            <button
-              key={child}
-              type="button"
-              role="tab"
-              aria-selected={activeChild === child}
-              aria-controls="school-week-panel"
-              onClick={() => {
-                setSyncError("");
-                setActiveChild(child);
-              }}
-            >
-              {weeks[child].child}
-            </button>
-          ))}
+        <div className={styles.headActions}>
+          <Link className={styles.reviewLink} href="/school/review">
+            Update inbox
+            {pendingDraftCount > 0 && <span>{pendingDraftCount}</span>}
+          </Link>
+          <div className={styles.childTabs} role="tablist" aria-label="Choose a child">
+            {(["khalil", "mekhi"] as const).map((child) => (
+              <button
+                key={child}
+                type="button"
+                role="tab"
+                aria-selected={activeChild === child}
+                aria-controls="school-week-panel"
+                onClick={() => {
+                  setSyncError("");
+                  setActiveChild(child);
+                }}
+              >
+                {weeks[child].child}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 

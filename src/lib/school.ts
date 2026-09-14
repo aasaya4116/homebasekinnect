@@ -1,17 +1,21 @@
-export type SchoolIcon =
-  | "backpack"
-  | "book-check"
-  | "book-open"
-  | "calculator"
-  | "divide"
-  | "file-text"
-  | "globe"
-  | "hand-heart"
-  | "heart-pulse"
-  | "mail"
-  | "map"
-  | "notebook"
-  | "recycle";
+export const SCHOOL_ICON_VALUES = [
+  "backpack",
+  "book-check",
+  "book-open",
+  "calculator",
+  "divide",
+  "file-text",
+  "globe",
+  "hand-heart",
+  "heart-pulse",
+  "mail",
+  "map",
+  "notebook",
+  "recycle",
+] as const;
+
+export type SchoolIcon = (typeof SCHOOL_ICON_VALUES)[number];
+export type SchoolChildKey = "khalil" | "mekhi";
 
 export type SchoolSubject = {
   name: string;
@@ -58,19 +62,19 @@ export type SchoolWeek = {
   };
 };
 
-export const SCHOOL_WEEKS: Record<"khalil" | "mekhi", SchoolWeek> = {
+export const SCHOOL_WEEKS: Record<SchoolChildKey, SchoolWeek> = {
   khalil: {
     child: "Khalil",
-    weekId: "2026-09-08",
-    meta: "First grade · Sep 8–12 · Mrs. McDermott",
+    weekId: "2026-09-14",
+    meta: "First grade · Sep 14–18 · Mrs. McDermott",
     subjects: [
       {
         name: "Phonics · Reading · Writing",
         icon: "book-open",
         points: [
-          "Fiction vs. nonfiction and using picture clues",
-          "Vowels, consonants, and long vowel sounds",
-          "Listening workstation and Chromebook routines",
+          "Fiction vs. nonfiction, picture clues, and responding to stories",
+          "Vowels, consonants, and short vowel sounds",
+          "Focus Groups and stronger small-group learning routines",
         ],
       },
       {
@@ -86,42 +90,45 @@ export const SCHOOL_WEEKS: Record<"khalil" | "mekhi", SchoolWeek> = {
         name: "Social Studies",
         icon: "map",
         points: [
-          "Why we celebrate Labor Day",
-          "What geographers do and how geography helps us",
+          "What geography is and what geographers do",
+          "How geography helps us understand our world",
         ],
       },
       {
         name: "Science",
         icon: "recycle",
         points: [
-          "Waste reduction and diversion",
-          "Reduce, reuse, and recycle at school",
+          "Camp Schmidt waste-diversion lesson",
+          "Reducing, reusing, recycling, and diverting waste",
         ],
       },
     ],
     dates: [
       {
         month: "Sep",
-        day: "9",
-        title: "All About Me bags due",
-        detail: "Wednesday",
+        day: "14",
+        title: "Bring corded headphones",
+        detail: "For independent Chromebook use",
         task: {
-          id: "2026-09-09-khalil-all-about-me",
-          actionTitle: "Send in the All About Me bag",
-          actionNote: "The teacher extended the deadline for Firsties.",
-          dueLabel: "Due Wed, Sep 9",
+          id: "2026-09-14-khalil-corded-headphones",
+          actionTitle: "Pack corded headphones",
+          actionNote: "The classroom cannot charge wireless headphones.",
+          dueLabel: "This week",
           icon: "backpack",
         },
       },
       { month: "Sep", day: "15", title: "Chick-fil-A fundraiser", detail: "3:00–7:00 PM · code YORKTOWN" },
-      { month: "Sep", day: "16", title: "School closed for students", detail: "Teacher professional development", schoolClosed: true },
+      { month: "Sep", day: "16", title: "No school for students", detail: "Teacher work day", schoolClosed: true },
+      { month: "Sep", day: "17", title: "PTA meeting", detail: "6:30 PM" },
       { month: "Sep", day: "21", title: "Schools closed", detail: "Yom Kippur", schoolClosed: true },
       { month: "Sep", day: "24", title: "Back to School Night", detail: "Yorktown Elementary" },
       { month: "Sep", day: "30", title: "PTA membership drive ends", detail: "Class pizza-party challenge" },
+      { month: "Oct", day: "9", title: "Spiritwear sale ends", detail: "Yorktown Spiritwear Store" },
     ],
     reminders: [
       { icon: "file-text", text: "Submit a written absence note within 3 days." },
-      { icon: "mail", text: "CC the school secretaries on transportation-change emails." },
+      { icon: "mail", text: "Email transportation changes and CC the school secretaries." },
+      { icon: "backpack", text: "Send a hoodie or light jacket and a water bottle each day." },
       {
         icon: "hand-heart",
         text: "Join the PTA by Sep 30 to support the class drive.",
@@ -133,116 +140,177 @@ export const SCHOOL_WEEKS: Record<"khalil" | "mekhi", SchoolWeek> = {
       initials: "JM",
       name: "Mrs. McDermott",
       role: "1st Grade · Yorktown Elementary",
-      note: "Our Firsties are ready for another week of big learning, little victories, and memorable adventures!",
+      note: "Our Firsties are continuing to learn classroom routines and are ready for another fun-filled week of learning.",
     },
   },
   mekhi: {
     child: "Mekhi",
-    weekId: "2026-09-08",
-    meta: "Weekly homework · Sep 8–11",
+    weekId: "2026-09-14",
+    meta: "Fourth grade · Sep 14–18 · Yorktown Weekly Update",
     subjects: [
       {
         name: "Reading · Language Arts",
         icon: "book-open",
-        points: ["Read and log four times this week", "Return the reading log by Thursday"],
+        points: [
+          "Two spelling activities and an adult-signed practice test",
+          "Read and log four days for at least 20 minutes each day",
+          "Write a Flora & Ulysses sequel; practice capitalization and cursive",
+        ],
       },
       {
         name: "Math",
         icon: "calculator",
         points: [
-          "Party Question word problem due Wednesday",
-          "Factors and multiples due Thursday",
-          "Checkpoint on Friday",
+          "Review factors and multiples for Tuesday’s Unit 1 assessment",
+          "Begin fraction equivalence and comparison",
+          "Use fraction strips and tape diagrams to identify unit fractions",
         ],
       },
       {
         name: "Science · Social Studies",
         icon: "globe",
-        points: ["Lines of latitude and longitude", "Assignment due Friday"],
+        points: [
+          "How unbalanced forces move objects and change energy",
+          "Maryland’s first people and life before Europeans arrived",
+        ],
       },
       {
         name: "Health",
         icon: "heart-pulse",
-        points: ["No assignment listed this week"],
+        points: [
+          "Learn about bullying",
+          "Bring home the booklet and study guide Tuesday",
+          "Prepare for Friday’s Health test",
+        ],
       },
     ],
     dates: [
-      { month: "Sep", day: "7", title: "No school", detail: "Labor Day · Monday", schoolClosed: true },
       {
         month: "Sep",
-        day: "9",
-        title: "Party Question word problem due",
-        detail: "Math · Wednesday",
+        day: "14",
+        title: "Spelling activity 1",
+        detail: "Complete in the Word Study journal",
         task: {
-          id: "2026-09-09-mekhi-party-question",
-          actionTitle: "Finish the Party Question word problem",
-          actionNote: "Mekhi’s first deadline this week is the Math assignment.",
-          dueLabel: "Due Wed, Sep 9",
-          icon: "calculator",
-        },
-      },
-      {
-        month: "Sep",
-        day: "10",
-        title: "Reading log due",
-        detail: "Thursday",
-        task: {
-          id: "2026-09-10-mekhi-reading-log",
-          actionTitle: "Complete and return the reading log",
-          actionNote: "Read and log on the white form four times this week.",
-          dueLabel: "Due Thu, Sep 10",
+          id: "2026-09-14-mekhi-spelling-activity-1",
+          actionTitle: "Complete the first spelling activity",
+          actionNote: "Choose one activity from the menu in the Word Study journal.",
+          dueLabel: "Mon, Sep 14",
           icon: "notebook",
         },
       },
       {
         month: "Sep",
-        day: "10",
-        title: "Factors and multiples due",
-        detail: "Math · Thursday",
+        day: "15",
+        title: "Unit 1 review sheet due",
+        detail: "Math · Factors and Multiples",
         task: {
-          id: "2026-09-10-mekhi-factors-multiples",
-          actionTitle: "Finish factors and multiples",
-          actionNote: "The second Math assignment is due Thursday.",
-          dueLabel: "Due Thu, Sep 10",
+          id: "2026-09-15-mekhi-unit-1-review",
+          actionTitle: "Finish the Unit 1 review sheet",
+          actionNote: "The Factors and Multiples review is due Tuesday.",
+          dueLabel: "Due Tue, Sep 15",
           icon: "calculator",
         },
       },
       {
         month: "Sep",
-        day: "11",
-        title: "Math checkpoint",
-        detail: "Friday",
+        day: "15",
+        title: "Spelling activity 2",
+        detail: "Complete in the Word Study journal",
         task: {
-          id: "2026-09-11-mekhi-math-checkpoint",
-          actionTitle: "Prepare for the Math checkpoint",
-          actionNote: "The weekly Math checkpoint is Friday.",
-          dueLabel: "Fri, Sep 11",
-          icon: "calculator",
+          id: "2026-09-15-mekhi-spelling-activity-2",
+          actionTitle: "Complete the second spelling activity",
+          actionNote: "Finish a second menu activity in the Word Study journal.",
+          dueLabel: "Tue, Sep 15",
+          icon: "notebook",
+        },
+      },
+      { month: "Sep", day: "15", title: "Chick-fil-A fundraiser", detail: "3:00–7:00 PM · code YORKTOWN" },
+      { month: "Sep", day: "16", title: "No school", detail: "Teacher professional development", schoolClosed: true },
+      { month: "Sep", day: "16", title: "PTA meeting", detail: "6:30 PM · date listed by Fourth Grade" },
+      {
+        month: "Sep",
+        day: "17",
+        title: "Word Study journal due",
+        detail: "Include the adult-signed spelling pretest",
+        task: {
+          id: "2026-09-17-mekhi-word-study-journal",
+          actionTitle: "Give and sign the spelling pretest",
+          actionNote: "Return the Word Study journal before Thursday’s spelling test.",
+          dueLabel: "Due Thu, Sep 17",
+          icon: "book-check",
         },
       },
       {
         month: "Sep",
-        day: "11",
-        title: "Science assignment due",
-        detail: "Friday",
+        day: "18",
+        title: "Pushing & Pulling assignment due",
+        detail: "Science",
         task: {
-          id: "2026-09-11-mekhi-science-lat-long",
-          actionTitle: "Finish latitude and longitude work",
-          actionNote: "The Science and Social Studies assignment is due Friday.",
-          dueLabel: "Due Fri, Sep 11",
+          id: "2026-09-18-mekhi-pushing-pulling",
+          actionTitle: "Finish Pushing & Pulling",
+          actionNote: "The Science assignment is due Friday.",
+          dueLabel: "Due Fri, Sep 18",
           icon: "globe",
         },
       },
+      {
+        month: "Sep",
+        day: "18",
+        title: "Fractions tape diagram due",
+        detail: "Math",
+        task: {
+          id: "2026-09-18-mekhi-fractions-tape-diagram",
+          actionTitle: "Finish the fractions tape diagram",
+          actionNote: "The fractions assignment is due Friday.",
+          dueLabel: "Due Fri, Sep 18",
+          icon: "divide",
+        },
+      },
+      {
+        month: "Sep",
+        day: "18",
+        title: "Health test",
+        detail: "Study the booklet and study guide",
+        task: {
+          id: "2026-09-18-mekhi-health-test",
+          actionTitle: "Study for the Health test",
+          actionNote: "Use the Health booklet and study guide sent home Tuesday.",
+          dueLabel: "Test Fri, Sep 18",
+          icon: "heart-pulse",
+        },
+      },
+      { month: "Sep", day: "21", title: "No school", detail: "Yom Kippur", schoolClosed: true },
+      {
+        month: "Sep",
+        day: "22",
+        title: "Reading log due",
+        detail: "Four reading days · adult signature",
+        task: {
+          id: "2026-09-22-mekhi-reading-log",
+          actionTitle: "Finish and sign the reading log",
+          actionNote: "Log four days of reading with 2–3 sentences for each entry.",
+          dueLabel: "Due Tue, Sep 22",
+          icon: "book-check",
+        },
+      },
+      { month: "Sep", day: "24", title: "Back to School Night", detail: "Yorktown Elementary" },
     ],
     reminders: [
-      { icon: "book-check", text: "Reading log needs four entries this week." },
-      { icon: "divide", text: "Review factors and multiples before Friday." },
+      { icon: "file-text", text: "Use the absence form or send a note when Mekhi returns." },
+      { icon: "mail", text: "Include all three teachers on general student emails." },
+      { icon: "backpack", text: "Bring a fillable water bottle every day." },
+      {
+        icon: "hand-heart",
+        text: "Yorktown Spiritwear is available online.",
+        href: "https://heritagespiritwear.com/product-category/yorktown-wildcats/",
+        linkLabel: "Shop",
+      },
     ],
     teacher: {
-      initials: "MW",
-      name: "Mekhi’s teacher",
-      role: "Weekly homework overview",
-      note: "Use the original weekly grid when you need to confirm the teacher’s exact wording.",
+      initials: "4G",
+      name: "Fourth Grade Team",
+      role: "Yorktown Elementary",
+      note: "Fourth graders are beginning spelling routines, wrapping up Factors and Multiples, and starting fractions this week.",
     },
   },
 };

@@ -34,6 +34,38 @@
   font-size: 1rem;
 }
 
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reviewLink {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.reviewLink:hover { color: var(--text-primary); border-color: var(--gold); }
+.reviewLink span {
+  min-width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--gold-fill);
+  color: var(--gold-ink);
+  font-size: 0.75rem;
+}
+
 .childTabs {
   display: flex;
   align-items: center;
@@ -259,6 +291,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+  padding-right: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
 }
 
 .railSection {
@@ -380,6 +416,8 @@
   .content { height: auto; display: flex; flex-direction: column; }
   .mainColumn,
   .rail { overflow: visible; }
+  .headActions { width: 100%; align-items: stretch; flex-direction: column-reverse; }
+  .reviewLink { justify-content: center; }
   .action { grid-template-columns: auto minmax(0, 1fr); padding: 15px; }
   .actionControls { grid-column: 2; justify-content: flex-start; }
   .syncError { grid-column: 1 / -1; text-align: left; }
