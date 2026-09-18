@@ -18,6 +18,7 @@ export default function Navigation() {
     { name: "Monthly", path: "/monthly" },
     { name: "By Person", path: "/byperson" },
     { name: "School", path: "/school" },
+    { name: "Goals", path: "/goals" },
     { name: "Chess", path: "/chess" },
   ];
 
