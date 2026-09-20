@@ -9,6 +9,7 @@ import { useOptimistic, useTransition } from "react";
 import { toggleChoreAction } from "@/lib/actions";
 import { fmtMoney, SLOT_ORDER, type ChoreItem, type KidBoard } from "@/lib/choreShared";
 import BalanceAdjustModal from "./BalanceAdjustModal";
+import ChoreAmountEditor from "./ChoreAmountEditor";
 
 type Toggle = { id: string; done: boolean };
 
@@ -53,21 +54,33 @@ export default function KidChoreColumn({ board, color }: { board: KidBoard; colo
   const frac = total > 0 ? doneCount / total : 0;
 
   const renderCard = (c: ChoreItem) => (
-    <button
+    <div
       key={c.id}
       className={`chore-card${c.done ? " done" : ""}`}
-      onClick={() => onTap(c)}
       style={{ "--kid": color } as React.CSSProperties}
     >
-      <span className="chore-check" aria-hidden>
-        {c.done ? "✓" : ""}
-      </span>
-      <span className="chore-emoji" aria-hidden>
-        {c.emoji}
-      </span>
-      <span className="chore-name">{c.name}</span>
-      <span className="chore-val">+{fmtMoney(c.allowance)}</span>
-    </button>
+      <button
+        className="chore-toggle"
+        onClick={() => onTap(c)}
+        aria-pressed={c.done}
+        aria-label={`${c.done ? "Mark incomplete" : "Mark complete"}: ${c.name}`}
+      >
+        <span className="chore-check" aria-hidden>
+          {c.done ? "✓" : ""}
+        </span>
+        <span className="chore-emoji" aria-hidden>
+          {c.emoji}
+        </span>
+        <span className="chore-name">{c.name}</span>
+      </button>
+      <ChoreAmountEditor
+        choreId={c.id}
+        choreName={c.name}
+        kid={board.kid}
+        allowance={c.allowance}
+        color={color}
+      />
+    </div>
   );
 
   // Group scheduled chores by time slot, keeping SLOT_ORDER.

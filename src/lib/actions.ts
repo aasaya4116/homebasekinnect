@@ -5,7 +5,7 @@ import { getGoogleAuth } from "./googleAuth";
 import { generateSchedule } from "./scheduler";
 import { cookForDate } from "./cadence";
 import { logSwap } from "./mealLog";
-import { appendChoreLog, appendBalanceAdjustment } from "./chores";
+import { appendChoreLog, appendBalanceAdjustment, updateChoreAllowance } from "./chores";
 import { todayStr } from "./dates";
 import { revalidatePath } from "next/cache";
 
@@ -152,6 +152,39 @@ export async function adjustBalanceAction(
   } catch (error: any) {
     console.error("Failed to adjust balance:", error);
     return { success: false, error: error.message || "Unknown error" };
+  }
+}
+
+/** Parent edits a chore's standard value. This updates the Chores definition
+ *  only; previously completed chores retain their original logged value. */
+export async function updateChoreAllowanceAction(
+  choreId: string,
+  kid: string,
+  allowance: number
+) {
+  try {
+    const cleanId = choreId.trim();
+    const cleanKid = kid.trim();
+    if (!cleanId || !cleanKid) {
+      return { success: false, error: "Chore details are missing. Refresh and try again." };
+    }
+    if (!isFinite(allowance) || allowance < 0 || allowance > 100) {
+      return { success: false, error: "Enter an amount between $0 and $100." };
+    }
+
+    const savedAllowance = await updateChoreAllowance(cleanId, cleanKid, allowance);
+
+    revalidatePath("/chores");
+    revalidatePath("/history");
+    revalidatePath("/");
+
+    return { success: true, allowance: savedAllowance };
+  } catch (error: unknown) {
+    console.error("Failed to update chore allowance:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 

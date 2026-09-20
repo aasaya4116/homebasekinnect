@@ -117,6 +117,43 @@ export async function getChoreDefs(): Promise<ChoreDef[]> {
   }
 }
 
+/** Update the value used by future check-offs for one chore definition.
+ *  Existing Chore Log rows keep the value recorded when they were completed. */
+export async function updateChoreAllowance(
+  choreId: string,
+  kid: string,
+  allowance: number
+): Promise<number> {
+  const nextAllowance = round2(allowance);
+  const auth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);
+  const sheets = google.sheets({ version: "v4", auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${CHORES_TAB}'!A2:B200`,
+  });
+
+  const wantedKid = kid.trim().toLowerCase();
+  const rowIndex = (res.data.values || []).findIndex(
+    (row) =>
+      String(row[0] || "").trim() === choreId.trim() &&
+      String(row[1] || "").trim().toLowerCase() === wantedKid
+  );
+
+  if (rowIndex === -1) {
+    throw new Error("That chore could not be found. Refresh the page and try again.");
+  }
+
+  const sheetRow = rowIndex + 2;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${CHORES_TAB}'!G${sheetRow}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[nextAllowance]] },
+  });
+
+  return nextAllowance;
+}
+
 type LogState = { date: string; choreId: string; kid: string; done: boolean; value: number };
 
 /** Final per-(date, chore) state from the append-only log — last event wins. */

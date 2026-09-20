@@ -16,7 +16,6 @@ export default function Navigation() {
     { name: "Chores", path: "/chores" },
     { name: "History", path: "/history" },
     { name: "Monthly", path: "/monthly" },
-    { name: "By Person", path: "/byperson" },
     { name: "School", path: "/school" },
     { name: "Goals", path: "/goals" },
     { name: "Chess", path: "/chess" },
