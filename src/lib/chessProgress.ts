@@ -39,6 +39,7 @@ const SESSIONS_HEADER = [
   "Out Of",
   "Attempts",
   "XP Earned",
+  "Question IDs",
 ];
 const SKILLS: ChessSkill[] = ["Knight", "Rook", "Bishop", "Fork", "Fundamentals"];
 
@@ -98,7 +99,7 @@ async function ensureChessTabs() {
       valueInputOption: "RAW",
       data: [
         { range: `'${PROGRESS_TAB}'!A1:K1`, values: [PROGRESS_HEADER] },
-        { range: `'${SESSIONS_TAB}'!A1:I1`, values: [SESSIONS_HEADER] },
+        { range: `'${SESSIONS_TAB}'!A1:J1`, values: [SESSIONS_HEADER] },
       ],
     },
   });
@@ -115,7 +116,7 @@ export async function getChessLearningSnapshot(today: string): Promise<ChessLear
     const sheets = google.sheets({ version: "v4", auth });
     const result = await sheets.spreadsheets.values.batchGet({
       spreadsheetId: SPREADSHEET_ID,
-      ranges: [`'${PROGRESS_TAB}'!A2:K100`, `'${SESSIONS_TAB}'!B2:I2000`],
+      ranges: [`'${PROGRESS_TAB}'!A2:K100`, `'${SESSIONS_TAB}'!B2:J2000`],
     });
     const progressRows = (result.data.valueRanges?.[0]?.values || []) as string[][];
     const sessionRows = (result.data.valueRanges?.[1]?.values || []) as string[][];
@@ -148,6 +149,13 @@ export async function getChessLearningSnapshot(today: string): Promise<ChessLear
         !recent.includes(questId)
       ) {
         recent.push(questId);
+      }
+
+      const recentQuestions = snapshot.recentQuestionIds[player];
+      if (recentQuestions && recentQuestions.length < 40) {
+        for (const questionId of String(row[8] || "").split(",").map((id) => id.trim()).filter(Boolean)) {
+          if (!recentQuestions.includes(questionId)) recentQuestions.push(questionId);
+        }
       }
     }
   } catch (error) {
@@ -220,7 +228,7 @@ export async function recordChessSession(input: ChessSessionInput): Promise<Ches
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
-    range: `'${SESSIONS_TAB}'!A:I`,
+    range: `'${SESSIONS_TAB}'!A:J`,
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: {
@@ -234,6 +242,7 @@ export async function recordChessSession(input: ChessSessionInput): Promise<Ches
         Math.max(1, input.maxScore),
         Math.max(1, input.attempts),
         Math.max(0, input.xpEarned),
+        Array.from(new Set(input.questionIds)).slice(0, 4).join(", "),
       ]],
     },
   });

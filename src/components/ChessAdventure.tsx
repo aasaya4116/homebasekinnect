@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   ChevronRight,
@@ -21,6 +21,12 @@ import {
   type ChessPlayerProgress,
   type ChessSkill,
 } from "@/lib/chessShared";
+import {
+  ADDITIONAL_QUIZ_QUESTIONS,
+  selectQuizQuestions,
+  uniqueQuizQuestions,
+  type QuizQuestion,
+} from "@/lib/chessQuestions";
 
 type Color = "white" | "black";
 type PieceKind = "king" | "queen" | "rook" | "bishop" | "knight" | "pawn";
@@ -50,14 +56,6 @@ type MoveQuest = QuestBase & {
   pieces: Record<string, Piece>;
 };
 
-type QuizQuestion = {
-  id: string;
-  prompt: string;
-  choices: string[];
-  answer: string;
-  explanation: string;
-};
-
 type QuizQuest = QuestBase & {
   kind: "quiz";
   questions: QuizQuestion[];
@@ -69,6 +67,7 @@ type ProgressMap = Record<string, ChessPlayerProgress>;
 
 const STORAGE_KEY = "homebase-chess-adventure-v1";
 const PRACTICE_HISTORY_STORAGE_KEY = "homebase-chess-practice-history-v1";
+const QUESTION_HISTORY_STORAGE_KEY = "homebase-chess-question-history-v1";
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
 
@@ -476,6 +475,11 @@ const EXTRA_PRACTICE_QUESTS: Quest[] = [
 ];
 
 const PRACTICE_DECK = [...PRACTICE_QUESTS, ...EXTRA_PRACTICE_QUESTS];
+const QUIZ_QUESTION_BANK = uniqueQuizQuestions([
+  ...QUESTS.flatMap((quest) => quest.kind === "quiz" ? quest.questions : []),
+  ...PRACTICE_DECK.flatMap((quest) => quest.kind === "quiz" ? quest.questions : []),
+  ...ADDITIONAL_QUIZ_QUESTIONS,
+]);
 
 function freshProgress(): ProgressMap {
   return Object.fromEntries(CHESS_PLAYERS.map((player) => [player, emptyPlayerProgress()]));
@@ -528,6 +532,21 @@ function mergePracticeHistory(
       Array.from(new Set([...(local?.[player] || []), ...(cloud[player] || [])]))
         .filter((id) => validIds.has(id))
         .slice(0, PRACTICE_DECK.length),
+    ])
+  );
+}
+
+function mergeQuestionHistory(
+  cloud: Record<string, string[]>,
+  local?: Record<string, string[]> | null
+) {
+  const validIds = new Set(QUIZ_QUESTION_BANK.map((question) => question.id));
+  return Object.fromEntries(
+    CHESS_PLAYERS.map((player) => [
+      player,
+      Array.from(new Set([...(local?.[player] || []), ...(cloud[player] || [])]))
+        .filter((id) => validIds.has(id))
+        .slice(0, QUIZ_QUESTION_BANK.length),
     ])
   );
 }
@@ -619,14 +638,34 @@ type ChessAdventureProps = {
 
 export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdventureProps) {
   const initialProgress = mergeProgressMaps(initialSnapshot.players, freshProgress());
+  const initialQuestIndex = recommendedQuestIndex(initialProgress.Mekhi, todayKey, "Mekhi");
+  const initialQuestionHistory = mergeQuestionHistory(initialSnapshot.recentQuestionIds);
+  const initialQuest = QUESTS[initialQuestIndex];
+  const initialQuestionSet = initialQuest.kind === "quiz"
+    ? selectQuizQuestions(
+        QUIZ_QUESTION_BANK,
+        initialQuestionHistory.Mekhi || [],
+        `${todayKey}-Mekhi-${initialProgress.Mekhi.totalSessions}-initial`
+      )
+    : null;
   const [player, setPlayer] = useState<ChessPlayer>("Mekhi");
   const [progress, setProgress] = useState<ProgressMap>(initialProgress);
-  const [questIndex, setQuestIndex] = useState(() => recommendedQuestIndex(initialProgress.Mekhi, todayKey, "Mekhi"));
+  const [questIndex, setQuestIndex] = useState(initialQuestIndex);
   const [practiceQuest, setPracticeQuest] = useState<Quest | null>(null);
   const [practiceRound, setPracticeRound] = useState(0);
   const [recentPracticeIds, setRecentPracticeIds] = useState<Record<string, string[]>>(() =>
     mergePracticeHistory(initialSnapshot.recentPracticeIds)
   );
+  const [recentQuestionIds, setRecentQuestionIds] = useState<Record<string, string[]>>(() => ({
+    ...initialQuestionHistory,
+    ...(initialQuestionSet
+      ? { Mekhi: initialQuestionSet.recentIds }
+      : {}),
+  }));
+  const [activeQuizQuestions, setActiveQuizQuestions] = useState<QuizQuestion[]>(
+    initialQuestionSet?.questions || []
+  );
+  const quizSetRound = useRef(0);
   const [pieces, setPieces] = useState<Record<string, Piece>>(() =>
     QUESTS[questIndex].kind === "move" ? copyPieces(QUESTS[questIndex].pieces) : {}
   );
@@ -662,16 +701,19 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
       : practiceCycleCount > 0
         ? "Continue practice"
         : "Start practice deck";
-  const quizQuestion = quest.kind === "quiz" ? quest.questions[quizQuestionIndex] : null;
+  const quizQuestion = quest.kind === "quiz" ? activeQuizQuestions[quizQuestionIndex] : null;
 
   useEffect(() => {
     let savedProgress: ProgressMap | null = null;
     let savedPracticeHistory: Record<string, string[]> | null = null;
+    let savedQuestionHistory: Record<string, string[]> | null = null;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) savedProgress = JSON.parse(saved) as ProgressMap;
       const savedHistory = localStorage.getItem(PRACTICE_HISTORY_STORAGE_KEY);
       if (savedHistory) savedPracticeHistory = JSON.parse(savedHistory) as Record<string, string[]>;
+      const savedQuestions = localStorage.getItem(QUESTION_HISTORY_STORAGE_KEY);
+      if (savedQuestions) savedQuestionHistory = JSON.parse(savedQuestions) as Record<string, string[]>;
     } catch {
       // A private or locked-down kiosk may block storage; the quest still works.
     }
@@ -683,32 +725,65 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
           ? mergePracticeHistory({}, savedPracticeHistory)
           : mergePracticeHistory(initialSnapshot.recentPracticeIds)
       );
-      if (savedProgress) {
-        const merged = mergeProgressMaps(initialSnapshot.players, savedProgress);
-        setProgress(merged);
-        const recommended = recommendedQuestIndex(merged.Mekhi, todayKey, "Mekhi");
-        const recommendedQuest = QUESTS[recommended];
-        setQuestIndex(recommended);
-        setPieces(recommendedQuest.kind === "move" ? copyPieces(recommendedQuest.pieces) : {});
-        setFeedback(recommendedQuest.kind === "quiz" ? "Answer 3 of 4 correctly to pass." : "Choose the glowing piece to begin.");
+      const mergedProgress = savedProgress
+        ? mergeProgressMaps(initialSnapshot.players, savedProgress)
+        : mergeProgressMaps(initialSnapshot.players, freshProgress());
+      const mergedQuestions = mergeQuestionHistory(
+        initialSnapshot.recentQuestionIds,
+        savedQuestionHistory
+      );
+      const recommended = recommendedQuestIndex(mergedProgress.Mekhi, todayKey, "Mekhi");
+      const recommendedQuest = QUESTS[recommended];
+      let nextQuestionHistory = mergedQuestions;
+      if (recommendedQuest.kind === "quiz") {
+        const nextSet = selectQuizQuestions(
+          QUIZ_QUESTION_BANK,
+          mergedQuestions.Mekhi || [],
+          `${todayKey}-Mekhi-${mergedProgress.Mekhi.totalSessions}-hydrate`
+        );
+        setActiveQuizQuestions(nextSet.questions);
+        nextQuestionHistory = { ...mergedQuestions, Mekhi: nextSet.recentIds };
+      } else {
+        setActiveQuizQuestions([]);
       }
+      setRecentQuestionIds(nextQuestionHistory);
+      setProgress(mergedProgress);
+      setQuestIndex(recommended);
+      setPieces(recommendedQuest.kind === "move" ? copyPieces(recommendedQuest.pieces) : {});
+      setFeedback(recommendedQuest.kind === "quiz" ? "Answer 3 of 4 correctly to pass." : "Choose the glowing piece to begin.");
       setReady(true);
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [initialSnapshot.players, initialSnapshot.recentPracticeIds, todayKey]);
+  }, [initialSnapshot.players, initialSnapshot.recentPracticeIds, initialSnapshot.recentQuestionIds, todayKey]);
 
   useEffect(() => {
     if (!ready) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
       localStorage.setItem(PRACTICE_HISTORY_STORAGE_KEY, JSON.stringify(recentPracticeIds));
+      localStorage.setItem(QUESTION_HISTORY_STORAGE_KEY, JSON.stringify(recentQuestionIds));
     } catch {
       // Keep play available even when the browser cannot persist progress.
     }
-  }, [progress, ready, recentPracticeIds]);
+  }, [progress, ready, recentPracticeIds, recentQuestionIds]);
 
-  const prepareQuest = (nextQuest: Quest) => {
+  const prepareQuest = (nextQuest: Quest, nextPlayer: ChessPlayer = player) => {
+    if (nextQuest.kind === "quiz") {
+      quizSetRound.current += 1;
+      const nextSet = selectQuizQuestions(
+        QUIZ_QUESTION_BANK,
+        recentQuestionIds[nextPlayer] || [],
+        `${todayKey}-${nextPlayer}-${nextQuest.id}-${quizSetRound.current}`
+      );
+      setActiveQuizQuestions(nextSet.questions);
+      setRecentQuestionIds((current) => ({
+        ...current,
+        [nextPlayer]: nextSet.recentIds,
+      }));
+    } else {
+      setActiveQuizQuestions([]);
+    }
     setPieces(nextQuest.kind === "move" ? copyPieces(nextQuest.pieces) : {});
     setSelected(null);
     setFeedback(nextQuest.kind === "quiz" ? "Answer 3 of 4 correctly to pass." : "Choose the glowing piece to begin.");
@@ -722,11 +797,11 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
     setQuizFinished(false);
   };
 
-  const resetQuest = (nextIndex = questIndex) => {
+  const resetQuest = (nextIndex = questIndex, nextPlayer: ChessPlayer = player) => {
     const nextQuest = QUESTS[nextIndex];
     setPracticeQuest(null);
     setQuestIndex(nextIndex);
-    prepareQuest(nextQuest);
+    prepareQuest(nextQuest, nextPlayer);
   };
 
   const restartCurrentQuest = () => prepareQuest(quest);
@@ -735,7 +810,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
     setPlayer(nextPlayer);
     setPracticeRound(0);
     const nextProgress = progress[nextPlayer] ?? emptyPlayerProgress();
-    resetQuest(recommendedQuestIndex(nextProgress, todayKey, nextPlayer));
+    resetQuest(recommendedQuestIndex(nextProgress, todayKey, nextPlayer), nextPlayer);
   };
 
   const isUnlocked = (index: number) => index === 0 || playerProgress.completed.includes(QUESTS[index - 1].id);
@@ -776,6 +851,9 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
       completedQuests: profile.completed,
       totalXp: profile.xp,
       practicedOn: todayKey,
+      questionIds: practicedQuest.kind === "quiz"
+        ? activeQuizQuestions.map((question) => question.id)
+        : [],
     }).then((result) => {
       if (!result.ok) {
         setSyncStatus("Saved on this screen");
@@ -784,6 +862,9 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
       setProgress((current) => mergeProgressMaps(result.snapshot.players, current));
       setWeeklySessions(result.snapshot.weeklySessions);
       setWeeklyXp(result.snapshot.weeklyXp);
+      setRecentQuestionIds((current) =>
+        mergeQuestionHistory(result.snapshot.recentQuestionIds, current)
+      );
       setSyncStatus("Synced");
     }).catch(() => setSyncStatus("Saved on this screen"));
   };
@@ -862,7 +943,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
 
   const advanceQuiz = () => {
     if (quest.kind !== "quiz" || !quizAnswerStatus) return;
-    const isLast = quizQuestionIndex === quest.questions.length - 1;
+    const isLast = quizQuestionIndex === activeQuizQuestions.length - 1;
 
     if (!isLast) {
       setQuizQuestionIndex((current) => current + 1);
@@ -876,11 +957,11 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
     setQuizFinished(true);
     setWon(passed);
     if (passed) {
-      setFeedback(`${quizCorrect} of ${quest.questions.length} correct — Scholar's Trial complete!`);
+      setFeedback(`${quizCorrect} of ${activeQuizQuestions.length} correct — quiz complete!`);
     } else {
-      setFeedback(`${quizCorrect} of ${quest.questions.length} correct — review the trail and try again.`);
+      setFeedback(`${quizCorrect} of ${activeQuizQuestions.length} correct — review the trail and try again.`);
     }
-    recordPractice(quest, quizCorrect, quest.questions.length, quest.questions.length, passed);
+    recordPractice(quest, quizCorrect, activeQuizQuestions.length, activeQuizQuestions.length, passed);
   };
 
   const squares = useMemo(
@@ -1044,10 +1125,10 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
                 <>
                   <div className="quiz-topline">
                     <span className="ovl">Scholar&rsquo;s Trial</span>
-                    <span>Question {quizQuestionIndex + 1} of {quest.questions.length}</span>
+                    <span>Question {quizQuestionIndex + 1} of {activeQuizQuestions.length}</span>
                   </div>
-                  <div className="quiz-progress" aria-label={`Question ${quizQuestionIndex + 1} of ${quest.questions.length}`}>
-                    {quest.questions.map((question, index) => (
+                  <div className="quiz-progress" aria-label={`Question ${quizQuestionIndex + 1} of ${activeQuizQuestions.length}`}>
+                    {activeQuizQuestions.map((question, index) => (
                       <span key={question.id} className={index <= quizQuestionIndex ? "on" : ""} />
                     ))}
                   </div>
@@ -1088,7 +1169,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
                     onClick={quizAnswerStatus ? advanceQuiz : checkQuizAnswer}
                   >
                     {quizAnswerStatus
-                      ? quizQuestionIndex === quest.questions.length - 1 ? "See my result" : "Next question"
+                      ? quizQuestionIndex === activeQuizQuestions.length - 1 ? "See my result" : "Next question"
                       : "Check answer"}
                     <ChevronRight size={18} />
                   </button>
@@ -1098,7 +1179,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
                   <div className="quiz-result-icon">{won ? <Trophy size={34} /> : <RotateCcw size={32} />}</div>
                   <span className="ovl">{quest.practice ? "Practice challenge complete" : "Knowledge check complete"}</span>
                   <h2>{won ? quest.practice ? "Challenge cleared!" : "Trail mastered!" : "Almost there"}</h2>
-                  <strong>{quizCorrect} / {quest.questions.length}</strong>
+                  <strong>{quizCorrect} / {activeQuizQuestions.length}</strong>
                   <p>
                     {won
                       ? quest.practice
@@ -1112,7 +1193,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
                     </button>
                   ) : (
                     <button type="button" className="btn-primary" onClick={restartCurrentQuest}>
-                      Try the quiz again <RotateCcw size={17} />
+                      Try fresh questions <RotateCcw size={17} />
                     </button>
                   )}
                 </div>
@@ -1192,7 +1273,7 @@ export default function ChessAdventure({ initialSnapshot, todayKey }: ChessAdven
 
           <div className="mission-actions">
             <button type="button" className="chess-reset" onClick={restartCurrentQuest}>
-              <RotateCcw size={17} /> {quest.kind === "quiz" ? "Restart quiz" : "Reset board"}
+              <RotateCcw size={17} /> {quest.kind === "quiz" ? "New questions" : "Reset board"}
             </button>
             {won && !quest.practice && questIndex < QUESTS.length - 1 && (
               <button type="button" className="btn-primary chess-next" onClick={nextQuest}>

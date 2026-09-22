@@ -17,6 +17,7 @@ export type ChessPlayerProgress = {
 export type ChessLearningSnapshot = {
   players: Record<string, ChessPlayerProgress>;
   recentPracticeIds: Record<string, string[]>;
+  recentQuestionIds: Record<string, string[]>;
   weeklySessions: number;
   weeklyXp: number;
 };
@@ -32,6 +33,7 @@ export type ChessSessionInput = {
   completedQuests: string[];
   totalXp: number;
   practicedOn: string;
+  questionIds: string[];
 };
 
 export function emptyMastery(): SkillMastery {
@@ -53,6 +55,7 @@ export function emptyChessSnapshot(): ChessLearningSnapshot {
   return {
     players: Object.fromEntries(CHESS_PLAYERS.map((player) => [player, emptyPlayerProgress()])),
     recentPracticeIds: Object.fromEntries(CHESS_PLAYERS.map((player) => [player, []])),
+    recentQuestionIds: Object.fromEntries(CHESS_PLAYERS.map((player) => [player, []])),
     weeklySessions: 0,
     weeklyXp: 0,
   };
