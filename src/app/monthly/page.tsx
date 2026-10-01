@@ -239,7 +239,17 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
                                 {badge && <span className={badge.cls} title={badge.title}>{badge.letter}</span>}
                               </div>
                               <span className="cal-swap">
-                                <MealSwapModal dateStr={cell.dateStr} mealType="Dinner" currentMealName={m.dinner} inventory={rawInventory} label="" buttonStyle={swapBtnStyle} />
+                                <MealSwapModal
+                                  dateStr={cell.dateStr}
+                                  mealType="Dinner"
+                                  currentMealName={m.dinner}
+                                  inventory={rawInventory}
+                                  label=""
+                                  buttonStyle={swapBtnStyle}
+                                  canConfirm={cell.dateStr <= todayStr}
+                                  source="Menu"
+                                  cook={cookToParent(m.cook)}
+                                />
                               </span>
                             </div>
                           )}
@@ -266,6 +276,9 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
                                 inventory={rawInventory}
                                 label=""
                                 buttonStyle={swapBtnStyle}
+                                canConfirm={cell.dateStr <= todayStr}
+                                source="Scheduled Meals"
+                                cook={dinner.cook || ""}
                               />
                             </span>
                           </div>
@@ -281,6 +294,9 @@ export default async function MonthlyPage({ searchParams }: { searchParams: Prom
                                 inventory={rawInventory}
                                 label=""
                                 buttonStyle={swapBtnStyle}
+                                canConfirm={cell.dateStr <= todayStr}
+                                source="Scheduled Meals"
+                                cook={lunch.cook || ""}
                               />
                             </span>
                           </div>

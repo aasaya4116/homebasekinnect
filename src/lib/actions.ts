@@ -5,6 +5,7 @@ import { getGoogleAuth } from "./googleAuth";
 import { generateSchedule } from "./scheduler";
 import { cookForDate } from "./cadence";
 import { logSwap } from "./mealLog";
+import { recordMealFeedback } from "./mealLearning";
 import { appendChoreLog, appendBalanceAdjustment, updateChoreAllowance } from "./chores";
 import { todayStr } from "./dates";
 import { revalidatePath } from "next/cache";
@@ -31,14 +32,33 @@ export async function swapMealAction(
   newMealName: string,
   prepTime: string = "N/A",
   ingredients: string = "",
-  image: string = ""
+  image: string = "",
+  reason: string = ""
 ) {
   try {
     // Menu-aware: if this date is hand-planned in the Menu tab, the swap edits
     // that tab (Dinner / Kids cell) instead of the generated Scheduled Meals —
     // so a Regenerate can't undo it and the two sources never diverge.
     const { updateMenuMeal } = await import("./data");
-    if (await updateMenuMeal(dateStr, mealType, newMealName)) {
+    const menuUpdate = await updateMenuMeal(dateStr, mealType, newMealName);
+    if (menuUpdate.updated) {
+      await logSwap(dateStr, mealType, menuUpdate.previousMeal, newMealName);
+      try {
+        await recordMealFeedback({
+          date: dateStr,
+          type: mealType,
+          action: "swap",
+          planned: menuUpdate.previousMeal,
+          previous: menuUpdate.previousMeal,
+          actual: newMealName,
+          reason,
+          source: "Menu",
+          status: dateStr <= todayStr() ? "Confirmed" : "Planned",
+          cook: menuUpdate.cook,
+        });
+      } catch (feedbackError) {
+        console.error("Menu meal changed, but feedback logging failed:", feedbackError);
+      }
       revalidatePath("/", "layout");
       revalidatePath("/");
       revalidatePath("/monthly");
@@ -114,6 +134,22 @@ export async function swapMealAction(
 
     // Record the deviation for long-term analytics (never blocks the swap).
     await logSwap(dateStr, mealType, previousMeal, newMealName);
+    try {
+      await recordMealFeedback({
+        date: dateStr,
+        type: mealType,
+        action: "swap",
+        planned: previousMeal || newMealName,
+        previous: previousMeal,
+        actual: newMealName,
+        reason,
+        source: "Scheduled Meals",
+        status: dateStr <= todayStr() ? "Confirmed" : "Planned",
+        cook,
+      });
+    } catch (feedbackError) {
+      console.error("Meal changed, but feedback logging failed:", feedbackError);
+    }
 
     // Invalidate Next.js cache so dashboard updates immediately
     revalidatePath("/", "layout");
@@ -125,6 +161,42 @@ export async function swapMealAction(
   } catch (error: any) {
     console.error("Failed to swap meal:", error);
     return { success: false, error: error.message || "Unknown error" };
+  }
+}
+
+/** Confirm the displayed meal as the final outcome without changing the plan. */
+export async function confirmMealAction(
+  dateStr: string,
+  mealType: string,
+  currentMealName: string,
+  source: "Menu" | "Scheduled Meals" = "Scheduled Meals",
+  cook: string = ""
+) {
+  try {
+    if (!dateStr || !mealType || !currentMealName || dateStr > todayStr()) {
+      return { success: false, error: "Only today or a past meal can be confirmed." };
+    }
+    await recordMealFeedback({
+      date: dateStr,
+      type: mealType,
+      action: "confirm",
+      planned: currentMealName,
+      previous: currentMealName,
+      actual: currentMealName,
+      source,
+      status: "Confirmed",
+      cook,
+    });
+    revalidatePath("/", "layout");
+    revalidatePath("/");
+    revalidatePath("/monthly");
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Failed to confirm meal:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 

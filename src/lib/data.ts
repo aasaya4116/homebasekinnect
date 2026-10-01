@@ -313,33 +313,42 @@ export async function getMenuDetail(): Promise<Map<string, MenuDay>> {
   return map;
 }
 
+export type MenuMealUpdateResult = {
+  updated: boolean;
+  previousMeal: string;
+  cook: string;
+};
+
 /** Update a hand-planned day's Dinner (or Kids lunch) cell in the Menu tab.
- *  Returns true if the date was menu-managed and updated, false otherwise —
- *  letting the caller fall back to the generated Scheduled Meals path. */
-export async function updateMenuMeal(dateStr: string, mealType: string, value: string): Promise<boolean> {
+ *  Returns the replaced meal and cook so the shared feedback logger can retain
+ *  the original recommendation instead of losing Menu-managed changes. */
+export async function updateMenuMeal(dateStr: string, mealType: string, value: string): Promise<MenuMealUpdateResult> {
   try {
     const writeAuth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);
     const sheets = google.sheets({ version: 'v4', auth: writeAuth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `'${MENU_TAB}'!A2:A400`,
+      range: `'${MENU_TAB}'!A2:G400`,
     });
-    const dates = res.data.values || [];
-    const idx = dates.findIndex((r) => String(r[0] || "").slice(0, 10) === dateStr);
-    if (idx === -1) return false; // not a menu-managed date
+    const rows = res.data.values || [];
+    const idx = rows.findIndex((r) => String(r[0] || "").slice(0, 10) === dateStr);
+    if (idx === -1) return { updated: false, previousMeal: "", cook: "" };
 
     const sheetRow = idx + 2; // +1 header, +1 to 1-based
-    const col = mealType.trim().toLowerCase() === "lunch" ? "E" : "F"; // Kids vs Dinner
+    const isLunch = mealType.trim().toLowerCase() === "lunch";
+    const col = isLunch ? "E" : "F"; // Kids vs Dinner
+    const previousMeal = String(rows[idx]?.[isLunch ? 4 : 5] || "").trim();
+    const cook = cookToParent(String(rows[idx]?.[6] || ""));
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `'${MENU_TAB}'!${col}${sheetRow}`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [[value]] },
     });
-    return true;
+    return { updated: true, previousMeal, cook };
   } catch (error: any) {
     console.error("updateMenuMeal failed:", error.message);
-    return false;
+    return { updated: false, previousMeal: "", cook: "" };
   }
 }
 
