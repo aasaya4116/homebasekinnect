@@ -90,7 +90,19 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
       })
       .sort((a, b) => (a.time === "All Day" ? 0 : 1) - (b.time === "All Day" ? 0 : 1));
 
-    return { index: i, dayNameShort, dayNum, monthShort, lunch, dinner, cook, isToday: i === 0, targetDateStr, dayEvents };
+    return {
+      index: i,
+      dayNameShort,
+      dayNum,
+      monthShort,
+      lunch,
+      dinner,
+      cook,
+      source: md ? "Menu" as const : "Scheduled Meals" as const,
+      isToday: i === 0,
+      targetDateStr,
+      dayEvents,
+    };
   });
 
   // "This week's prep" — the same-all-week breakfast + adult lunches, shown once
@@ -155,6 +167,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                     currentMealName={todaysDinner.name}
                     inventory={rawInventory}
                     label="Swap dinner"
+                    canConfirm
+                    source={days[0].source}
+                    cook={days[0].cook}
                     buttonStyle={{
                       background: "var(--gold-fill)",
                       color: "var(--gold-ink)",
@@ -327,6 +342,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                       currentMealName={day.lunch.name}
                       inventory={rawInventory}
                       label=""
+                      canConfirm={day.isToday}
+                      source={day.source}
+                      cook={day.cook}
                       buttonStyle={{ background: "transparent", border: "none", color: "var(--text-tertiary)", padding: "2px 4px" }}
                     />
                   </div>
@@ -353,6 +371,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
                       currentMealName={day.dinner.name}
                       inventory={rawInventory}
                       label=""
+                      canConfirm={day.isToday}
+                      source={day.source}
+                      cook={day.cook}
                       buttonStyle={{ background: "transparent", border: "none", color: "var(--text-tertiary)", padding: "2px 4px" }}
                     />
                   </div>

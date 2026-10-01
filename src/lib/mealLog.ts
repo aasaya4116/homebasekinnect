@@ -15,6 +15,7 @@
 import { google } from "googleapis";
 import { getGoogleAuth } from "./googleAuth";
 import { todayStr } from "./dates";
+import { classifyMeal as classifyMealValue, syncMealOutcomes } from "./mealLearning";
 
 const auth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || "";
@@ -31,11 +32,7 @@ const HISTORY_HEADER = ["Date", "Type", "Planned", "Actual", "Category", "Cook",
 // always the primary record; this just enables "how many eat-outs" style counts.
 // ------------------------------------------------------------
 export function classifyMeal(name: string): string {
-  const n = (name || "").toLowerCase();
-  if (n.includes("leftover")) return "Leftovers";
-  if (n.includes("eat out") || n.includes("eating out") || n.includes("take a break")) return "Eat Out";
-  if (n.includes("takeout") || n.includes("take-out") || n.includes("delivery") || n.includes("doordash") || n.includes("uber eats")) return "Takeout";
-  return "Home-cooked";
+  return classifyMealValue(name);
 }
 
 // ------------------------------------------------------------
@@ -97,9 +94,14 @@ export async function closeOutDays(): Promise<{ processed: number; added: number
 
   const candidates = planRows
     .map((r) => ({ date: String(r[0] || "").slice(0, 10), meal: r[1] || "", type: r[2] || "Dinner", cook: r[5] || "" }))
-    .filter((c) => c.date && c.meal && c.date <= today);
+    // Yesterday and earlier are finalizable. Never mark tonight as "actual"
+    // at midnight before the family has had a chance to eat or confirm it.
+    .filter((c) => c.date && c.meal && c.date < today);
 
-  if (candidates.length === 0) return { processed: 0, added: 0, updated: 0 };
+  if (candidates.length === 0) {
+    await syncMealOutcomes();
+    return { processed: 0, added: 0, updated: 0 };
+  }
 
   // 2. Reconstruct "Planned" from the swap log: the earliest From for a (date, type)
   //    is the originally scheduled dish. No swap → planned == actual.
@@ -174,6 +176,11 @@ export async function closeOutDays(): Promise<{ processed: number; added: number
       requestBody: { values: toAppend },
     });
   }
+
+  // Maintain the cleaned, confidence-aware dataset alongside the legacy
+  // history. This preserves every old row while giving reports one canonical
+  // outcome per meal and including Menu-managed dates.
+  await syncMealOutcomes();
 
   return { processed: seen.size, added, updated };
 }
