@@ -244,6 +244,107 @@ h1, h2, h3, h4 {
 .btn-primary:active { transform: scale(0.97); opacity: 0.85; }
 .btn-primary.sm { padding: 9px 20px; font-size: 0.9rem; min-height: 0; }
 
+.nav-logout {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.nav-logout:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.nav-logout:active { transform: scale(0.96); }
+
+/* ============================================================
+   PRIVATE FAMILY ACCESS
+   ============================================================ */
+
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(200, 169, 110, 0.13), transparent 38%),
+    var(--bg-color);
+}
+
+.login-card {
+  width: min(100%, 470px);
+  padding: 40px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-widget);
+}
+
+.login-mark {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 28px;
+  border: 1px solid rgba(200, 169, 110, 0.35);
+  border-radius: 18px;
+  background: var(--gold-dim);
+  color: var(--gold);
+}
+
+.login-brand {
+  margin: 0 0 12px;
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 650;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.login-brand span { color: var(--gold); }
+.login-brand em { color: var(--text-secondary); font-style: normal; font-weight: 450; }
+.login-card h1 { font-size: 2.35rem; line-height: 1.08; }
+.login-copy { margin: 12px 0 28px; color: var(--text-secondary); font-size: 1rem; line-height: 1.55; }
+
+.login-form { display: flex; flex-direction: column; gap: 10px; }
+.login-form label { color: var(--text-secondary); font-size: 0.88rem; font-weight: 650; }
+.login-input-wrap {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel-hover);
+  color: var(--text-tertiary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.login-input-wrap:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); color: var(--gold); }
+.login-input-wrap input {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1.05rem;
+}
+.login-error { margin: 2px 0 0; color: #f87171; font-size: 0.88rem; line-height: 1.4; }
+.login-submit { width: 100%; margin-top: 10px; min-height: 52px; }
+.login-trust { margin: 22px 0 0; color: var(--text-tertiary); font-size: 0.8rem; text-align: center; }
+
+@media (max-width: 520px) {
+  .login-page { padding: 16px; align-items: center; }
+  .login-card { padding: 28px 22px; }
+  .login-card h1 { font-size: 2rem; }
+}
+
 /* ============================================================
    WIDGET CARD
    ============================================================ */

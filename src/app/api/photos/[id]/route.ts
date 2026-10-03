@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { getGoogleAuth } from '@/lib/googleAuth';
+import { FAMILY_SESSION_COOKIE, verifyFamilySessionToken } from '@/lib/familySession';
 
 export const runtime = 'nodejs';
-export const revalidate = 31536000; // Cache for 1 year
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authenticated = await verifyFamilySessionToken(
+    request.cookies.get(FAMILY_SESSION_COOKIE)?.value
+  );
+  if (!authenticated) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+
   const { id } = await params;
   if (!id) {
     return new NextResponse('Missing photo ID', { status: 400 });
@@ -30,7 +38,8 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable',
+        'Cache-Control': 'private, no-store, max-age=0',
+        'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet',
       },
     });
   } catch (error) {

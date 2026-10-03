@@ -9,12 +9,14 @@ import { recordMealFeedback } from "./mealLearning";
 import { appendChoreLog, appendBalanceAdjustment, updateChoreAllowance } from "./chores";
 import { todayStr } from "./dates";
 import { revalidatePath } from "next/cache";
+import { requireFamilySession } from "./familyAuth";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1692O1jGvFv-aB00Xy7jU1kH_X0a0eB_E9nL2Q1b1O8c";
 
 /** Regenerate the rolling month of meals, then refresh the dashboard.
  *  Returns void so it can be used directly as a <form action>. */
 export async function regenerateAction(): Promise<void> {
+  await requireFamilySession();
   try {
     await generateSchedule(30);
     revalidatePath("/", "layout");
@@ -35,6 +37,7 @@ export async function swapMealAction(
   image: string = "",
   reason: string = ""
 ) {
+  await requireFamilySession();
   try {
     // Menu-aware: if this date is hand-planned in the Menu tab, the swap edits
     // that tab (Dinner / Kids cell) instead of the generated Scheduled Meals —
@@ -172,6 +175,7 @@ export async function confirmMealAction(
   source: "Menu" | "Scheduled Meals" = "Scheduled Meals",
   cook: string = ""
 ) {
+  await requireFamilySession();
   try {
     if (!dateStr || !mealType || !currentMealName || dateStr > todayStr()) {
       return { success: false, error: "Only today or a past meal can be confirmed." };
@@ -209,6 +213,7 @@ export async function adjustBalanceAction(
   note: string,
   zeroOut: boolean
 ) {
+  await requireFamilySession();
   try {
     if (!zeroOut && (!isFinite(amount) || amount === 0)) {
       return { success: false, error: "Enter a non-zero amount" };
@@ -234,6 +239,7 @@ export async function updateChoreAllowanceAction(
   kid: string,
   allowance: number
 ) {
+  await requireFamilySession();
   try {
     const cleanId = choreId.trim();
     const cleanKid = kid.trim();
@@ -269,6 +275,7 @@ export async function toggleChoreAction(
   done: boolean,
   value: number
 ) {
+  await requireFamilySession();
   try {
     await appendChoreLog(todayStr(), choreId, kid, done, value);
 

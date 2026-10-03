@@ -5,6 +5,7 @@ import type { SchoolChildKey } from "@/lib/school";
 import { appendSchoolTaskLog } from "@/lib/schoolProgress";
 import { getPublishedSchoolWeeks, setSchoolDraftStatus } from "@/lib/schoolStore";
 import { schoolTaskIds } from "@/lib/schoolValidation";
+import { requireFamilySession } from "@/lib/familyAuth";
 
 function isChildKey(value: string): value is SchoolChildKey {
   return value === "khalil" || value === "mekhi";
@@ -18,6 +19,7 @@ export async function toggleSchoolTaskAction(
   childKey: string,
   done: boolean
 ): Promise<{ success: boolean; error?: string }> {
+  await requireFamilySession();
   if (!isChildKey(childKey)) return { success: false, error: "Unknown child" };
 
   const week = (await getPublishedSchoolWeeks())[childKey];
@@ -45,6 +47,7 @@ function validImportId(value: string): boolean {
  * separately protected by SCHOOL_IMPORT_SECRET; these actions can only change
  * the status of a server-validated draft already in the family Sheet. */
 export async function publishSchoolDraftAction(importId: string): Promise<void> {
+  await requireFamilySession();
   if (!validImportId(importId)) throw new Error("Invalid school update");
   await setSchoolDraftStatus(importId, "published");
   revalidatePath("/school");
@@ -52,6 +55,7 @@ export async function publishSchoolDraftAction(importId: string): Promise<void> 
 }
 
 export async function archiveSchoolDraftAction(importId: string): Promise<void> {
+  await requireFamilySession();
   if (!validImportId(importId)) throw new Error("Invalid school update");
   await setSchoolDraftStatus(importId, "archived");
   revalidatePath("/school");

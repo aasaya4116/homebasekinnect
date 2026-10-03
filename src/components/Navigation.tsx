@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, LogOut } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import Clock from "./Clock";
 import Weather from "./Weather";
@@ -54,6 +54,11 @@ export default function Navigation() {
             </button>
           </form>
         )}
+        <form action="/api/auth/logout" method="post">
+          <button className="nav-logout" type="submit" title="Sign out" aria-label="Sign out">
+            <LogOut size={18} />
+          </button>
+        </form>
         <Clock />
       </div>
     </nav>

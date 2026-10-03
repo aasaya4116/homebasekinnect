@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { appendGoalProgress } from "@/lib/goalProgress";
 import { goalFor } from "@/lib/goals";
+import { requireFamilySession } from "@/lib/familyAuth";
 
 export async function setGoalProgressAction(
   personKey: string,
   goalId: string,
   requestedValue: number
 ): Promise<{ success: boolean; value?: number; error?: string }> {
+  await requireFamilySession();
   const goal = goalFor(personKey, goalId);
   if (!goal) return { success: false, error: "Unknown goal" };
   if (!Number.isFinite(requestedValue)) return { success: false, error: "Invalid progress" };

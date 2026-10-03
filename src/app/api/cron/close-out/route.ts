@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // when the CRON_SECRET env var is set, so we reject anything else.
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

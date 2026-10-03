@@ -2,10 +2,12 @@
 
 import { recordChessSession } from "./chessProgress";
 import type { ChessLearningSnapshot, ChessSessionInput } from "./chessShared";
+import { requireFamilySession } from "./familyAuth";
 
 export async function recordChessSessionAction(
   input: ChessSessionInput
 ): Promise<{ ok: true; snapshot: ChessLearningSnapshot } | { ok: false; message: string }> {
+  await requireFamilySession();
   try {
     const snapshot = await recordChessSession(input);
     return { ok: true, snapshot };
