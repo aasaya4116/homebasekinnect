@@ -15,6 +15,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ASAYA Homebase KINnect",
   description: "Smart Family Meal Planner and Dashboard",
+  verification: {
+    google: "KdxO1WsE__fE_5htX9r-IyXtgiU2TgtmkGBhZn-qZBU",
+  },
   robots: {
     index: false,
     follow: false,
