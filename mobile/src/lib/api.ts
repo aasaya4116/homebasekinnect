@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { KidBoard, OverviewResponse, SchoolChildKey, SchoolResponse } from './types';
+import type { KidBoard, MealChangeRequest, OverviewResponse, SchoolChildKey, SchoolResponse } from './types';
 
 const API_URL = (process.env.EXPO_PUBLIC_HOMEBASE_API_URL || 'https://homebasekinnect.vercel.app').replace(/\/$/, '');
 
@@ -33,5 +33,10 @@ export const homebaseApi = {
     request<{ completedTaskIds: string[] }>('/api/mobile/school/tasks', {
       method: 'POST',
       body: JSON.stringify({ taskId, childKey, done }),
+    }),
+  changeMeal: (meal: MealChangeRequest) =>
+    request<{ meal: { previousMeal: string; actualMeal: string; cook: string; source: string } }>('/api/mobile/meals', {
+      method: 'POST',
+      body: JSON.stringify(meal),
     }),
 };

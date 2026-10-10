@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { homebaseApi } from '@/lib/api';
-import type { OverviewResponse, SchoolChildKey, SchoolResponse } from '@/lib/types';
+import type { MealChangeRequest, OverviewResponse, SchoolChildKey, SchoolResponse } from '@/lib/types';
 
 type HomebaseContextValue = {
   overview: OverviewResponse | null;
@@ -14,6 +14,7 @@ type HomebaseContextValue = {
   refreshSchool(): Promise<void>;
   toggleChore(choreId: string, kid: string, done: boolean): Promise<void>;
   toggleSchoolTask(taskId: string, childKey: SchoolChildKey, done: boolean): Promise<void>;
+  changeMeal(meal: MealChangeRequest): Promise<void>;
 };
 
 const HomebaseContext = createContext<HomebaseContextValue | null>(null);
@@ -65,9 +66,22 @@ export function HomebaseProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const changeMeal = useCallback(async (meal: MealChangeRequest) => {
+    try {
+      await homebaseApi.changeMeal(meal);
+      await refreshOverview();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Homebase could not save this meal.';
+      setError(message);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      throw caught;
+    }
+  }, [refreshOverview]);
+
   const value = useMemo(
-    () => ({ overview, school, loadingOverview, loadingSchool, error, refreshOverview, refreshSchool, toggleChore, toggleSchoolTask }),
-    [overview, school, loadingOverview, loadingSchool, error, refreshOverview, refreshSchool, toggleChore, toggleSchoolTask]
+    () => ({ overview, school, loadingOverview, loadingSchool, error, refreshOverview, refreshSchool, toggleChore, toggleSchoolTask, changeMeal }),
+    [overview, school, loadingOverview, loadingSchool, error, refreshOverview, refreshSchool, toggleChore, toggleSchoolTask, changeMeal]
   );
   return <HomebaseContext.Provider value={value}>{children}</HomebaseContext.Provider>;
 }

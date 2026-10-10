@@ -1,17 +1,12 @@
 "use server";
 
-import { google } from "googleapis";
-import { getGoogleAuth } from "./googleAuth";
 import { generateSchedule } from "./scheduler";
-import { cookForDate } from "./cadence";
-import { logSwap } from "./mealLog";
 import { recordMealFeedback } from "./mealLearning";
+import { changeMeal } from "./mealChanges";
 import { appendChoreLog, appendBalanceAdjustment, updateChoreAllowance } from "./chores";
 import { todayStr } from "./dates";
 import { revalidatePath } from "next/cache";
 import { requireFamilySession } from "./familyAuth";
-
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_SPREADSHEET_ID || "1692O1jGvFv-aB00Xy7jU1kH_X0a0eB_E9nL2Q1b1O8c";
 
 /** Regenerate the rolling month of meals, then refresh the dashboard.
  *  Returns void so it can be used directly as a <form action>. */
@@ -39,120 +34,15 @@ export async function swapMealAction(
 ) {
   await requireFamilySession();
   try {
-    // Menu-aware: if this date is hand-planned in the Menu tab, the swap edits
-    // that tab (Dinner / Kids cell) instead of the generated Scheduled Meals —
-    // so a Regenerate can't undo it and the two sources never diverge.
-    const { updateMenuMeal } = await import("./data");
-    const menuUpdate = await updateMenuMeal(dateStr, mealType, newMealName);
-    if (menuUpdate.updated) {
-      await logSwap(dateStr, mealType, menuUpdate.previousMeal, newMealName);
-      try {
-        await recordMealFeedback({
-          date: dateStr,
-          type: mealType,
-          action: "swap",
-          planned: menuUpdate.previousMeal,
-          previous: menuUpdate.previousMeal,
-          actual: newMealName,
-          reason,
-          source: "Menu",
-          status: dateStr <= todayStr() ? "Confirmed" : "Planned",
-          cook: menuUpdate.cook,
-        });
-      } catch (feedbackError) {
-        console.error("Menu meal changed, but feedback logging failed:", feedbackError);
-      }
-      revalidatePath("/", "layout");
-      revalidatePath("/");
-      revalidatePath("/monthly");
-      return { success: true };
-    }
-
-    // The cadence decides who cooks — a swap changes the dish, not the cook.
-    const cook = cookForDate(dateStr);
-    const auth = getGoogleAuth(["https://www.googleapis.com/auth/spreadsheets"]);
-    const sheets = google.sheets({ version: "v4", auth });
-
-    const tabName = "Scheduled Meals";
-
-    // Fetch existing schedule
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `'${tabName}'!A1:G100`,
+    await changeMeal({
+      date: dateStr,
+      mealType,
+      name: newMealName,
+      prepTime,
+      ingredients,
+      image,
+      reason,
     });
-
-    const rows = res.data.values || [];
-    let foundIndex = -1;
-    let previousMeal = ""; // the dish being replaced — captured for the swap log
-
-    // Search for matching date and meal type (1-indexed in Sheets)
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const rDate = (row[0] || "").trim();
-      const rType = (row[2] || "Dinner").trim().toLowerCase();
-      
-      let isSameDate = false;
-      try {
-        const parsedRDate = new Date(rDate.replace(/-/g, '/'));
-        const parsedTarget = new Date(dateStr.trim().replace(/-/g, '/'));
-        if (!isNaN(parsedRDate.getTime()) && !isNaN(parsedTarget.getTime())) {
-          isSameDate = parsedRDate.getFullYear() === parsedTarget.getFullYear() &&
-                       parsedRDate.getMonth() === parsedTarget.getMonth() &&
-                       parsedRDate.getDate() === parsedTarget.getDate();
-        } else {
-          isSameDate = rDate === dateStr.trim();
-        }
-      } catch {
-        isSameDate = rDate === dateStr.trim();
-      }
-
-      if (isSameDate && rType === mealType.trim().toLowerCase()) {
-        foundIndex = i + 1; // 1-indexed sheet row number
-        previousMeal = row[1] || "";
-        break;
-      }
-    }
-
-    if (foundIndex !== -1) {
-      // Update existing row
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `'${tabName}'!B${foundIndex}:G${foundIndex}`,
-        valueInputOption: "USER_ENTERED",
-        requestBody: {
-          values: [[newMealName, mealType, prepTime, ingredients, cook, image]],
-        },
-      });
-    } else {
-      // Append new row if date/type didn't exist
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `'${tabName}'!A:G`,
-        valueInputOption: "USER_ENTERED",
-        requestBody: {
-          values: [[dateStr, newMealName, mealType, prepTime, ingredients, cook, image]],
-        },
-      });
-    }
-
-    // Record the deviation for long-term analytics (never blocks the swap).
-    await logSwap(dateStr, mealType, previousMeal, newMealName);
-    try {
-      await recordMealFeedback({
-        date: dateStr,
-        type: mealType,
-        action: "swap",
-        planned: previousMeal || newMealName,
-        previous: previousMeal,
-        actual: newMealName,
-        reason,
-        source: "Scheduled Meals",
-        status: dateStr <= todayStr() ? "Confirmed" : "Planned",
-        cook,
-      });
-    } catch (feedbackError) {
-      console.error("Meal changed, but feedback logging failed:", feedbackError);
-    }
 
     // Invalidate Next.js cache so dashboard updates immediately
     revalidatePath("/", "layout");

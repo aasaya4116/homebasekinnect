@@ -1,6 +1,6 @@
 import { cookForDate } from "@/lib/cadence";
 import { getChoreBoards } from "@/lib/chores";
-import { cookToParent, getFullDaySchedule, getMenuDetail, getWeeklyMeals } from "@/lib/data";
+import { cookToParent, getFullDaySchedule, getMenuDetail, getRawInventory, getWeeklyMeals } from "@/lib/data";
 import { dayParts, dayStr } from "@/lib/dates";
 import { getSmartMealImage } from "@/lib/mealImages";
 import { privateJson, requireMobileUser } from "@/lib/mobileAuth";
@@ -12,11 +12,12 @@ export async function GET(request: Request) {
   if (auth.response) return auth.response;
 
   const daysCount = 7;
-  const [allMeals, menuDetail, events, chores] = await Promise.all([
+  const [allMeals, menuDetail, events, chores, inventory] = await Promise.all([
     getWeeklyMeals(),
     getMenuDetail(),
     getFullDaySchedule(daysCount),
     getChoreBoards(dayStr(0)),
+    getRawInventory(),
   ]);
 
   const days = Array.from({ length: daysCount }, (_, index) => {
@@ -60,5 +61,13 @@ export async function GET(request: Request) {
     };
   });
 
-  return privateJson({ generatedAt: new Date().toISOString(), today: dayStr(0), days, chores });
+  const seenMealNames = new Set<string>();
+  const mealOptions = inventory.filter((meal) => {
+    const key = meal.name.trim().toLowerCase();
+    if (!key || seenMealNames.has(key)) return false;
+    seenMealNames.add(key);
+    return true;
+  });
+
+  return privateJson({ generatedAt: new Date().toISOString(), today: dayStr(0), days, chores, mealOptions });
 }

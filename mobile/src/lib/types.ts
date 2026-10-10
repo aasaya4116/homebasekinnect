@@ -1,5 +1,21 @@
 export type MobileMeal = { name: string; prepTime?: string; image?: string };
 
+export type MobileMealOption = MobileMeal & {
+  id: string;
+  type: string;
+  ingredients?: string;
+};
+
+export type MealChangeRequest = {
+  date: string;
+  mealType: 'Lunch' | 'Dinner';
+  name: string;
+  reason: string;
+  prepTime?: string;
+  ingredients?: string;
+  image?: string;
+};
+
 export type MobileEvent = {
   id: string;
   time: string;
@@ -53,6 +69,7 @@ export type OverviewResponse = {
   today: string;
   days: MobileDay[];
   chores: KidBoard[];
+  mealOptions: MobileMealOption[];
 };
 
 export type SchoolChildKey = 'khalil' | 'mekhi';

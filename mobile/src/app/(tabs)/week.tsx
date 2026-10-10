@@ -1,15 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect } from 'react';
-import { RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BrandMark, Card, ErrorBanner, LoadingView, Pill, uiStyles } from '@/components/homebase-ui';
+import { MealEditor, type MealEditorTarget } from '@/components/meal-editor';
 import { colors, spacing } from '@/constants/theme';
+import type { MealChangeRequest } from '@/lib/types';
 import { useHomebase } from '@/providers/homebase-provider';
 
 export default function WeekScreen() {
-  const { overview, loadingOverview, error, refreshOverview } = useHomebase();
+  const { overview, loadingOverview, error, refreshOverview, changeMeal } = useHomebase();
+  const [editingMeal, setEditingMeal] = useState<MealEditorTarget | null>(null);
+  const [savingMeal, setSavingMeal] = useState(false);
   useEffect(() => { if (!overview) refreshOverview(); }, [overview, refreshOverview]);
   if (!overview && loadingOverview) return <LoadingView label="Planning the week…" />;
+
+  async function saveMeal(meal: MealChangeRequest) {
+    setSavingMeal(true);
+    try { await changeMeal(meal); } finally { setSavingMeal(false); }
+  }
 
   return (
     <SafeAreaView style={uiStyles.screen}>
@@ -33,8 +42,26 @@ export default function WeekScreen() {
                 {day.isToday ? <Pill label="Today" /> : <View />}
                 <Pill label={`${day.cook} cooks`} tone="gold" />
               </View>
-              <View style={styles.mealRow}><View style={styles.mealIcon}><Ionicons name="moon-outline" size={17} color={colors.gold} /></View><View style={{ flex: 1 }}><Text style={styles.mealLabel}>Dinner</Text><Text style={styles.mealName}>{day.dinner?.name || 'Not scheduled'}</Text></View></View>
-              <View style={styles.mealRow}><View style={styles.mealIcon}><Ionicons name="sunny-outline" size={17} color={colors.emerald} /></View><View style={{ flex: 1 }}><Text style={styles.mealLabel}>Lunch</Text><Text style={styles.lunchName}>{day.lunch?.name || 'Not scheduled'}</Text></View></View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Change ${day.dayName} dinner`}
+                onPress={() => setEditingMeal({ date: day.date, mealType: 'Dinner', currentMeal: day.dinner?.name || '' })}
+                style={({ pressed }) => [styles.mealRow, pressed && styles.mealPressed]}
+              >
+                <View style={styles.mealIcon}><Ionicons name="moon-outline" size={17} color={colors.gold} /></View>
+                <View style={{ flex: 1 }}><Text style={styles.mealLabel}>Dinner</Text><Text style={styles.mealName}>{day.dinner?.name || 'Not scheduled'}</Text></View>
+                <Ionicons name="pencil-outline" size={17} color={colors.gold} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Change ${day.dayName} lunch`}
+                onPress={() => setEditingMeal({ date: day.date, mealType: 'Lunch', currentMeal: day.lunch?.name || '' })}
+                style={({ pressed }) => [styles.mealRow, pressed && styles.mealPressed]}
+              >
+                <View style={styles.mealIcon}><Ionicons name="sunny-outline" size={17} color={colors.emerald} /></View>
+                <View style={{ flex: 1 }}><Text style={styles.mealLabel}>Lunch</Text><Text style={styles.lunchName}>{day.lunch?.name || 'Not scheduled'}</Text></View>
+                <Ionicons name="pencil-outline" size={17} color={colors.emerald} />
+              </Pressable>
               {day.events.length ? (
                 <View style={styles.events}>
                   {day.events.slice(0, 3).map((event) => <Text key={event.id} style={styles.event} numberOfLines={1}>{event.time === 'All Day' ? 'All day' : event.time} · {event.title}{event.person !== 'Family' ? ` — ${event.person}` : ''}</Text>)}
@@ -45,6 +72,13 @@ export default function WeekScreen() {
           </Card>
         ))}
       </ScrollView>
+      <MealEditor
+        target={editingMeal}
+        options={overview?.mealOptions || []}
+        saving={savingMeal}
+        onClose={() => !savingMeal && setEditingMeal(null)}
+        onSave={saveMeal}
+      />
     </SafeAreaView>
   );
 }
@@ -61,6 +95,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, gap: 12, padding: spacing.md },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between' },
   mealRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  mealPressed: { opacity: 0.62 },
   mealIcon: { width: 30, height: 30, borderRadius: 10, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   mealLabel: { color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 10, fontWeight: '800' },
   mealName: { color: colors.text, fontSize: 16, lineHeight: 20, fontWeight: '700', marginTop: 2 },
