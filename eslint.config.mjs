@@ -11,6 +11,10 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Generated Expo output and its reset utility are not application source.
+    "mobile/dist/**",
+    "mobile/node_modules/**",
+    "mobile/scripts/**",
     "next-env.d.ts",
   ]),
 ]);

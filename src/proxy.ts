@@ -28,6 +28,12 @@ function safeReturnPath(request: NextRequest): string {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Native clients authenticate with a short-lived Supabase bearer token.
+  // The route handlers still enforce the family allowlist before returning data.
+  if (pathname.startsWith("/api/mobile/")) {
+    return protectResponse(NextResponse.next());
+  }
+
   if (AUTOMATION_PATHS.has(pathname)) {
     return protectResponse(NextResponse.next());
   }
