@@ -34,7 +34,8 @@ export async function getFamilyPhotos(): Promise<string[]> {
 
     const files = res.data.files || [];
 
-    // Use our server-side API proxy endpoint so any unauthenticated client (like Pi Kiosk) can load photos
+    // Keep Drive credentials server-side. The signed-in kiosk loads photos
+    // through this authenticated endpoint and caches each stable file ID locally.
     const photoUrls = files.map(
       (f) => `/api/photos/${f.id}`
     );

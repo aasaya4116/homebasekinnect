@@ -38,7 +38,11 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'private, no-store, max-age=0',
+        // Drive file IDs are stable, so the wall display can keep each photo in
+        // its private browser cache instead of downloading the original again
+        // every time the slideshow loops. `private` prevents shared CDN caches
+        // from storing family photos, while `immutable` avoids revalidation.
+        'Cache-Control': 'private, max-age=31536000, immutable',
         'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet',
       },
     });
