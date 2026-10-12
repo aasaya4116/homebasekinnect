@@ -47,3 +47,7 @@ Redeploy once after adding the variables.
 - The child's identity comes from the trusted Gmail label, not from email contents.
 - Ambiguous or conflicting details are shown as warnings in the review screen.
 - No raw email body or attachment is stored in the Sheet; only the concise structured result and source metadata are retained.
+- If AI extraction fails, Homebase records only the message metadata and error in
+  the `School Import Failures` tab, then acknowledges the message so the Gmail
+  trigger cannot resend a multi-megabyte attachment every hour. The original
+  email remains in Gmail for manual review.

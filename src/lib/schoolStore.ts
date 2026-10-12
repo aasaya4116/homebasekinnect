@@ -9,6 +9,7 @@ import { normalizeSchoolWeek } from "./schoolValidation";
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || "";
 export const SCHOOL_WEEKS_TAB = "School Weeks";
+export const SCHOOL_IMPORT_FAILURES_TAB = "School Import Failures";
 export const SCHOOL_WEEKS_HEADER = [
   "Imported At",
   "Import ID",
@@ -21,6 +22,15 @@ export const SCHOOL_WEEKS_HEADER = [
   "Source URL",
   "Warnings JSON",
   "Week JSON",
+];
+const SCHOOL_IMPORT_FAILURES_HEADER = [
+  "Failed At",
+  "Message ID",
+  "Child",
+  "Subject",
+  "Sender",
+  "Source URL",
+  "Error",
 ];
 
 function readSheets(): sheets_v4.Sheets {
@@ -53,6 +63,31 @@ async function ensureSchoolWeeksTab(sheets: sheets_v4.Sheets): Promise<void> {
     range: `'${SCHOOL_WEEKS_TAB}'!A1`,
     valueInputOption: "RAW",
     requestBody: { values: [SCHOOL_WEEKS_HEADER] },
+  });
+}
+
+async function ensureSchoolImportFailuresTab(sheets: sheets_v4.Sheets): Promise<void> {
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+  const exists = (meta.data.sheets || []).some(
+    (sheet) => sheet.properties?.title === SCHOOL_IMPORT_FAILURES_TAB
+  );
+  if (exists) return;
+
+  try {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: SCHOOL_IMPORT_FAILURES_TAB } } }] },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "";
+    if (!message.toLowerCase().includes("already exists")) throw error;
+  }
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${SCHOOL_IMPORT_FAILURES_TAB}'!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values: [SCHOOL_IMPORT_FAILURES_HEADER] },
   });
 }
 
@@ -200,6 +235,35 @@ export async function saveSchoolDraft(input: {
       week: input.week,
     },
   };
+}
+
+export async function saveSchoolImportFailure(input: {
+  messageId: string;
+  childKey: SchoolChildKey;
+  subject: string;
+  sender: string;
+  sourceUrl?: string;
+  error: string;
+}): Promise<void> {
+  if (!SPREADSHEET_ID) throw new Error("GOOGLE_SPREADSHEET_ID is not configured");
+  const sheets = writeSheets();
+  await ensureSchoolImportFailuresTab(sheets);
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${SCHOOL_IMPORT_FAILURES_TAB}'!A:G`,
+    valueInputOption: "RAW",
+    requestBody: {
+      values: [[
+        new Date().toISOString(),
+        input.messageId,
+        input.childKey,
+        input.subject,
+        input.sender,
+        input.sourceUrl || "",
+        input.error.replace(/\s+/g, " ").trim().slice(0, 800),
+      ]],
+    },
+  });
 }
 
 export async function setSchoolDraftStatus(importId: string, nextStatus: "published" | "archived"): Promise<void> {

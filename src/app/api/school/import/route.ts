@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { parseSchoolEmail } from "@/lib/schoolEmailParser";
 import type { SchoolImportAttachment, SchoolImportPayload } from "@/lib/schoolImportTypes";
-import { saveSchoolDraft } from "@/lib/schoolStore";
+import { saveSchoolDraft, saveSchoolImportFailure } from "@/lib/schoolStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,7 +79,36 @@ export async function POST(request: Request) {
     const payload = parsePayload(await request.json());
     if (!payload) return NextResponse.json({ ok: false, error: "Invalid school email payload" }, { status: 400 });
 
-    const parsed = await parseSchoolEmail(payload);
+    let parsed: Awaited<ReturnType<typeof parseSchoolEmail>>;
+    try {
+      parsed = await parseSchoolEmail(payload);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown parser error";
+      console.error("School email parser failed:", message);
+      try {
+        await saveSchoolImportFailure({
+          messageId: payload.messageId,
+          childKey: payload.child,
+          subject: payload.subject,
+          sender: payload.sender || "",
+          sourceUrl: payload.sourceUrl,
+          error: message,
+        });
+      } catch (failureLogError: unknown) {
+        console.error(
+          "School import failure could not be recorded:",
+          failureLogError instanceof Error ? failureLogError.message : "Unknown error"
+        );
+      }
+
+      // The Gmail bridge treats any 2xx response as processed. Acknowledge this
+      // poison message after recording its metadata so a multi-megabyte email
+      // cannot be resent every hour and exhaust the Vercel transfer allowance.
+      return NextResponse.json(
+        { ok: false, accepted: true, error: "School update needs manual review" },
+        { status: 202 }
+      );
+    }
     const saved = await saveSchoolDraft({
       messageId: payload.messageId,
       childKey: payload.child,
